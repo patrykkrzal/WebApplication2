@@ -1,10 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Rent.Models;
 
 namespace Rent.Data
 
 {
-    public class DataContext : DbContext
+    public class DataContext : IdentityDbContext<User>
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
@@ -20,6 +21,8 @@ namespace Rent.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<OrderedItem>()
                 .HasKey(eo => new { eo.EquipmentId, eo.OrderId });
 
@@ -31,7 +34,11 @@ namespace Rent.Data
             modelBuilder.Entity<OrderedItem>()
                 .HasOne(eo => eo.Order)
                 .WithMany(o => o.OrderedItems)   
-                .HasForeignKey(eo => eo.OrderId);
+                .HasForeignKey(eo => eo.OrderId); 
+
+
+           modelBuilder.Entity<User>().Property(u => u.Role).HasDefaultValue("user");
+
         }
     } 
 
