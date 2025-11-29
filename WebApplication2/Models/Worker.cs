@@ -24,9 +24,6 @@ namespace Rent.Models
         [MaxLength(255)]
         public string? Address { get; set; }
 
-        [MaxLength(30)]
-        public string Role { get; set; } = "administrator";
-
         public TimeSpan WorkStart { get; set; }
         public TimeSpan WorkEnd { get; set; }
         [MaxLength(255)]

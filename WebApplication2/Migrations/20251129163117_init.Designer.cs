@@ -12,8 +12,8 @@ using Rent.Data;
 namespace Rent.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251129152317_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251129163117_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -310,7 +310,6 @@ namespace Rent.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -334,7 +333,6 @@ namespace Rent.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Login")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -347,20 +345,13 @@ namespace Rent.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Phone_number")
-                        .IsRequired()
-                        .HasMaxLength(9)
-                        .HasColumnType("nvarchar(9)");
 
                     b.Property<int?>("RentalInfoId")
                         .HasColumnType("int");

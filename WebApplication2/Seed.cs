@@ -38,10 +38,8 @@ namespace Rent
                     First_name = "Paweł",
                     Last_name = "Kowalski",
                     Login = "pawel",
-                    PasswordHash = "password-hash",
                     Email = "pawel@example.com",
-                    Phone_number = "111222333",
-                   
+                    PhoneNumber = "111222333",
                     Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
@@ -52,10 +50,8 @@ namespace Rent
                     First_name = "Anna",
                     Last_name = "Nowak",
                     Login = "anna",
-                    PasswordHash = "password-hash",
                     Email = "anna@example.com",
-                    Phone_number = "444555666",
-            
+                    PhoneNumber = "444555666",
                     Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
