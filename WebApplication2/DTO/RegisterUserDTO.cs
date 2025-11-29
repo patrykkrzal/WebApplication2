@@ -1,37 +1,33 @@
-﻿using Rent.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Rent.DTO
 {
-    public class CreateUserDTO
+    public class RegisterUserDTO
     {
 
         [Required]
-        [MaxLength(50)]
-        public string First_name { get; set; }
+        [MinLength(5)]
+        public string UserName { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Last_name { get; set; }
-
-        [Required]
-        [MaxLength(50)]
-        public string Login { get; set; }
-
-        [Required]
-        [MaxLength(255)]
-        public string Password{ get; set; }
-
-        [Required]
-        [MaxLength(50)]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Invalid email address.")]
         public string Email { get; set; }
 
         [Required]
-        [MaxLength(9)]
-        public string Phone_number { get; set; }
+        [MinLength(5)]
+        public string Password { get; set; }
 
-        [MaxLength(30)]
-        public string Role { get; set; } = "user";
+        [Required]
+        public string FirstName { get; set; }
+
+        [Required]
+        public string LastName { get; set; }
+
+        [Required]
+        [RegularExpression(@"^\d{9}$", ErrorMessage = "Phone number must be exactly 9 digits.")]
+        public string ContactNumber { get; set; }
+
+        // Optional extras mapped to domain fields 
+        public string? Login { get; set; }
     }
 }

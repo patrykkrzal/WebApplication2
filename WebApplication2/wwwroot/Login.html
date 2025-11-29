@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial,sans-serif;
+            margin: 2rem;
+        }
+
+        form {
+            max-width: 400px;
+            border: 1px solid #ddd;
+            padding: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-top: .5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: .5rem;
+            margin-top: .25rem;
+        }
+
+        button {
+            margin-top: 1rem;
+            padding: .5rem 1rem;
+        }
+
+        .msg {
+            margin-top: .5rem;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Logowanie</h1>
+    <form id="loginForm">
+        <label>
+            Login
+            <input type="text" name="UserName" required>
+        </label>
+        <label>
+            Has³o
+            <input type="password" name="Password" required>
+        </label>
+        <button type="submit">Zaloguj</button>
+        <div id="loginMsg" class="msg"></div>
+    </form>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const msg = document.getElementById('loginMsg');
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            msg.className = 'msg';
+            msg.textContent = 'Logowanie...';
+
+            const data = Object.fromEntries(new FormData(form)); // { UserName, Password }
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    credentials: 'include' // potrzebne jeœli u¿ywasz cookie auth
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(errText);
+                }
+
+                msg.className = 'msg success';
+                msg.textContent = 'Logowanie pomyœlne';
+            } catch (err) {
+                msg.className = 'msg error';
+                msg.textContent = 'B³¹d: ' + err.message;
+            }
+        });
+    </script>
+</body>
+</html>
