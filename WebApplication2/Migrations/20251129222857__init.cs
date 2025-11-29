@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Rent.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class _init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -160,12 +160,12 @@ namespace Rent.Migrations
                     Email = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Phone_number = table.Column<string>(type: "nvarchar(9)", maxLength: 9, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Role = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     WorkStart = table.Column<TimeSpan>(type: "time", nullable: false),
                     WorkEnd = table.Column<TimeSpan>(type: "time", nullable: false),
                     Working_Days = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Job_Title = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    RentalInfoId = table.Column<int>(type: "int", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    RentalInfoId = table.Column<int>(type: "int", nullable: true),
                     WarehouseId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -175,8 +175,7 @@ namespace Rent.Migrations
                         name: "FK_Workers_RentalInfo_RentalInfoId",
                         column: x => x.RentalInfoId,
                         principalTable: "RentalInfo",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Workers_Warehouse_WarehouseId",
                         column: x => x.WarehouseId,

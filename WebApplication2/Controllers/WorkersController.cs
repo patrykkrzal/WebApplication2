@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Rent.Data;
 using Rent.DTO;
 using Rent.Models;
@@ -13,13 +14,11 @@ namespace Rent.Controllers
     public class WorkersController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly DataContext _db;
 
-        public WorkersController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, DataContext db)
+        public WorkersController(UserManager<User> userManager, DataContext db)
         {
             _userManager = userManager;
-            _roleManager = roleManager;
             _db = db;
         }
 
@@ -29,36 +28,27 @@ namespace Rent.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // 1) Utwórz konto użytkownika (Identity)
             var user = new User
             {
-                UserName = dto.Email,        // login = email
+                UserName = dto.Email,
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
                 First_name = dto.FirstName,
                 Last_name = dto.LastName,
                 Login = dto.Email,
-                     // domenowe pole w Twoim User (opcjonalne)
             };
 
-            var createResult = await _userManager.CreateAsync(user, dto.Password);
-            if (!createResult.Succeeded)
-                return BadRequest(new { Errors = createResult.Errors.Select(e => e.Description) });
+            var createUser = await _userManager.CreateAsync(user, dto.Password);
+            if (!createUser.Succeeded)
+                return BadRequest(new { Errors = createUser.Errors.Select(e => e.Description) });
 
-            // 2) Zapewnij istnienie roli i przypisz
-            const string roleName = "Worker";
-            if (!await _roleManager.RoleExistsAsync(roleName))
-            {
-                var roleCreate = await _roleManager.CreateAsync(new IdentityRole(roleName));
-                if (!roleCreate.Succeeded)
-                    return BadRequest(new { Errors = roleCreate.Errors.Select(e => e.Description), Message = "Nie udało się utworzyć roli 'Worker'." });
-            }
+            await _userManager.AddToRoleAsync(user, "Worker");
 
-            var addToRole = await _userManager.AddToRoleAsync(user, roleName);
-            if (!addToRole.Succeeded)
-                return BadRequest(new { Errors = addToRole.Errors.Select(e => e.Description), Message = "Nie udało się przypisać roli 'Worker'." });
+            // Walidacja istnienia RentalInfo
+            bool rentalExists = await _db.RentalInfo.AnyAsync(r => r.Id == dto.RentalInfoId);
+            if (!rentalExists)
+                return BadRequest(new { Message = $"RentalInfo o Id={dto.RentalInfoId} nie istnieje." });
 
-            // 3) Utwórz encję domenową Worker (pola pracownika)
             var worker = new Worker
             {
                 First_name = dto.FirstName,
@@ -66,13 +56,11 @@ namespace Rent.Controllers
                 Email = dto.Email,
                 Phone_number = dto.PhoneNumber,
                 Address = dto.Address,
-                Role = "worker",
                 WorkStart = dto.WorkStart,
                 WorkEnd = dto.WorkEnd,
                 Working_Days = dto.Working_Days,
-                Job_Title = dto.Job_Title
-                // Jeśli chcesz powiązać z RentalInfo, dodaj dto.RentalInfoId i ustaw:
-                // RentalInfo = await _db.RentalInfo.FindAsync(dto.RentalInfoId)
+                Job_Title = dto.Job_Title,
+                RentalInfoId = dto.RentalInfoId
             };
 
             _db.Workers.Add(worker);

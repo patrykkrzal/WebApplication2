@@ -4,22 +4,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Rent.Models
 {
-    // IdentityUser already defines: Id (string), UserName, Email, PhoneNumber, PasswordHash, etc.
-    // Keep only additional domain properties to avoid conflicts.
+    // Domain user extending IdentityUser; do NOT redeclare Id/PasswordHash/Email/PhoneNumber.
     public class User : IdentityUser
     {
-     
-        [MaxLength(50)]
+        [Required, MaxLength(50)]
         public string First_name { get; set; }
 
-      
-        [MaxLength(50)]
+        [Required, MaxLength(50)]
         public string Last_name { get; set; }
 
+        // Optional separate login alias (Identity uses UserName)
         [MaxLength(50)]
         public string? Login { get; set; }
 
-    
+        [MaxLength(30)]
+        public string Role { get; set; } = "user";
+
         public RentalInfo? RentalInfo { get; set; }
         public ICollection<Order> Orders { get; set; } = new List<Order>();
     }

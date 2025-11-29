@@ -452,11 +452,10 @@ namespace Rent.Migrations
                         .HasMaxLength(9)
                         .HasColumnType("nvarchar(9)");
 
-                    b.Property<int>("RentalInfoId")
+                    b.Property<int?>("RentalInfoId")
                         .HasColumnType("int");
 
                     b.Property<string>("Role")
-                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
@@ -597,9 +596,7 @@ namespace Rent.Migrations
                 {
                     b.HasOne("Rent.Models.RentalInfo", "RentalInfo")
                         .WithMany("Workers")
-                        .HasForeignKey("RentalInfoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RentalInfoId");
 
                     b.HasOne("Rent.Models.Warehouse", null)
                         .WithMany("workers")
