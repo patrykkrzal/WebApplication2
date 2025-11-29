@@ -12,7 +12,7 @@ namespace Rent.Models
         [MaxLength(255)]
         public string? Name { get; set; }
 
-        public string? size { get; set; }
+        public string? Size { get; set; }
 
         [Required]
         public bool Is_In_Werehouse { get; set; }

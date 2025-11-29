@@ -1,14 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System.Collections.Generic;
+﻿using Rent.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace Rent.Models
+namespace Rent.DTO
 {
-    public class User : IdentityUser 
-    { 
-       
-        [Key]
-        public int Id { get; set; }
+    public class CreateUserDTO
+    {
 
         [Required]
         [MaxLength(50)]
@@ -24,7 +20,7 @@ namespace Rent.Models
 
         [Required]
         [MaxLength(255)]
-        public string PasswordHash { get; set; }
+        public string Password{ get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -35,11 +31,7 @@ namespace Rent.Models
         [MaxLength(9)]
         public string Phone_number { get; set; }
 
- 
         [MaxLength(30)]
         public string Role { get; set; } = "user";
-
-        public RentalInfo? RentalInfo { get; set; }
-        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

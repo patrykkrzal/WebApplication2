@@ -41,7 +41,7 @@ namespace Rent
                     PasswordHash = "password-hash",
                     Email = "pawel@example.com",
                     Phone_number = "111222333",
-                    Address = "ul. Przykładowa1",
+                   
                     Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
@@ -55,7 +55,7 @@ namespace Rent
                     PasswordHash = "password-hash",
                     Email = "anna@example.com",
                     Phone_number = "444555666",
-                    Address = "ul. Przykładowa2",
+            
                     Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
@@ -99,14 +99,14 @@ namespace Rent
 
                 var eq1 = new Equipment()
                 {
-                    size = "M",
+                    Size = "M",
                     Is_In_Werehouse = true,
                     Price = 100m,
                 };
 
                 var eq2 = new Equipment()
                 {
-                    size = "L",
+                    Size = "L",
                     Is_In_Werehouse = true,
                     Price = 150m,
                 };

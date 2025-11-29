@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Rent.Data;
+using Rent.DTO;
+using Rent.Models;
 using System.Linq;
 
 namespace RentControllers
@@ -23,5 +25,21 @@ namespace RentControllers
             return Ok(allEquipment);
         }
 
+
+        [HttpPost] 
+        public IActionResult AddEquipment(CreateEquipmentDTO addEquipment)
+        {
+            var equipmentEntity = new Equipment()
+            {
+                Name = addEquipment.Name,
+                Price = addEquipment.Price,
+                Size = addEquipment.Size
+            };
+            dbContext.Equipment.Add(equipmentEntity);
+            dbContext.SaveChanges();
+            return Ok(equipmentEntity);
+        }
+
+     
     }
 }

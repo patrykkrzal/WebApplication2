@@ -9,7 +9,7 @@ namespace Rent.Data
         {
             var optionsBuilder = new DbContextOptionsBuilder<DataContext>();
 
-            // Wstaw tutaj Twój connection string
+
             optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=RentDb;Trusted_Connection=True;");
 
             return new DataContext(optionsBuilder.Options);
