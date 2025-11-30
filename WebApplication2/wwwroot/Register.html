@@ -4,86 +4,93 @@
  <meta charset="UTF-8" />
  <title>Rejestracja</title>
  <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
  <style>
- body { font-family: Arial, sans-serif; margin:2rem; }
- form { border:1px solid #ddd; padding:1rem; margin-bottom:2rem; max-width:480px; }
- label { display: block; margin-top: .5rem; }
- input { width:100%; padding: .5rem; margin-top: .25rem; }
- button { margin-top:1rem; padding: .5rem1rem; }
- .msg { margin-top: .5rem; white-space: pre-wrap; }
- .success { color: #0c7a0c; }
- .error { color: #b00020; }
+ body { margin:0; padding:0; min-height:100vh; background: linear-gradient(135deg,#e6f3ff0%,#d1e8ff50%,#b3d9ff100%); font-family:'Arial',sans-serif; }
+ .buttons-top-right { position:fixed; top:20px; right:20px; display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; z-index:10; }
+ .winter-button { padding:12px18px; background:linear-gradient(145deg,#66b3ff,#3399ff); border:none; border-radius:10px; color:#fff; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; transition:.3s; box-shadow:04px10px rgba(51,153,255,.35); border:2px solid #99ccff; }
+ .winter-button:hover { background:linear-gradient(145deg,#3399ff,#0077e6); transform:translateY(-2px); box-shadow:06px14px rgba(51,153,255,.45); }
+ .content-section { padding:100px32px40px; max-width:760px; }
+ .frost-effect { background:rgba(255,255,255,0.18); backdrop-filter:blur(15px); border-radius:18px; padding:34px36px30px; border:1px solid rgba(179,224,255,0.6); box-shadow:08px25px rgba(0,100,200,0.15); }
+ .winter-title { color:#0066cc; font-size:2.2rem; font-weight:700; margin-bottom:1.4rem; text-shadow:2px2px4px rgba(0,102,204,0.15); text-align:center; }
+ label { font-weight:600; font-size:.7rem; letter-spacing:.5px; text-transform:uppercase; color:#134a7c; display:block; }
+ input { background:rgba(255,255,255,0.78); border:1px solid #b3d9ff; border-radius:10px; padding:.65rem .9rem; margin-top:.4rem; font-size:.9rem; width:100%; }
+ input:focus { outline:none; border-color:#3399ff; box-shadow:0003px rgba(51,153,255,0.25); }
+ .submit-btn { width:100%; padding:14px22px; margin-top:20px; background:linear-gradient(145deg,#66b3ff,#3399ff); border:none; border-radius:12px; color:#fff; font-weight:700; font-size:.85rem; letter-spacing:.8px; text-transform:uppercase; box-shadow:04px10px rgba(51,153,255,.35); transition:.3s; }
+ .submit-btn:hover { background:linear-gradient(145deg,#3399ff,#0077e6); transform:translateY(-3px); box-shadow:08px16px rgba(51,153,255,.45); }
+ .msg { margin-top:14px; font-size:.8rem; white-space:pre-wrap; }
+ .success { color:#0c7a0c; }
+ .error { color:#b00020; }
+ .alt-link { margin-top:16px; text-align:center; font-size:.75rem; }
+ .alt-link a { color:#0066cc; font-weight:600; text-decoration:none; }
+ .alt-link a:hover { text-decoration:underline; }
+ @media (max-width:780px){ .content-section{ padding:120px16px40px; max-width:100%; } .buttons-top-right{ position:static; justify-content:center; padding:20px10px0; } }
  </style>
 </head>
 <body>
- <h1>Rejestracja</h1>
- <form id="registerForm">
+ <div class="buttons-top-right">
+ <button class="winter-button" type="button">❆ Menu</button>
+ <button class="winter-button" type="button">⛷️ Sprzęt</button>
+ <button class="winter-button" type="button" onclick="location.href='UserPanel.html'">👤 Panel użytkownika</button>
+ <button class="winter-button" type="button">📞 Kontakt</button>
+ <button class="winter-button" type="button">⚙️ Koszyk</button>
+ <button class="winter-button" type="button" onclick="location.href='Login.html'">🔒 Logowanie</button>
+ </div>
+ <div class="content-section mx-auto">
+ <div class="frost-effect">
+ <h1 class="winter-title">Rejestracja użytkownika</h1>
+ <form id="registerForm" novalidate>
+ <div class="mb-3">
  <label>Login (UserName)
  <input type="text" name="UserName" required />
  </label>
+ </div>
+ <div class="mb-3">
  <label>Email
  <input type="email" name="Email" required />
  </label>
+ </div>
+ <div class="mb-3">
  <label>Hasło
- <input type="password" name="Password" required />
+ <input type="password" name="Password" required minlength="6" />
  </label>
+ </div>
+ <div class="row g-3">
+ <div class="col-md-6">
  <label>Imię
  <input type="text" name="FirstName" required />
  </label>
+ </div>
+ <div class="col-md-6">
  <label>Nazwisko
  <input type="text" name="LastName" required />
  </label>
+ </div>
+ </div>
+ <div class="mb-3 mt-3">
  <label>Telefon (ContactNumber)
  <input type="text" name="ContactNumber" required />
  </label>
+ </div>
+ <div class="mb-3">
  <label>Alias Login (opcjonalnie)
  <input type="text" name="Login" />
  </label>
- <label>Rola (opcjonalnie)
- <input type="text" name="Role" />
- </label>
- <button type="submit">Zarejestruj</button>
+ </div>
+ <button type="submit" class="submit-btn">Zarejestruj</button>
  <div id="registerMsg" class="msg"></div>
+ <div class="alt-link">Masz już konto? <a href="Login.html">Zaloguj się</a></div>
  </form>
-
+ </div>
+ </div>
  <script>
  const apiBase = '';
- function formToObject(form) {
- const obj = {};
- new FormData(form).forEach((v, k) => { obj[k] = v });
- Object.keys(obj).forEach(k => { if (obj[k] === '') delete obj[k]; });
- return obj;
- }
- async function postJson(url, body) {
- const res = await fetch(url, {
- method: 'POST',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify(body),
- credentials: 'include'
- });
- let text = await res.text();
- try { text = JSON.parse(text); } catch { }
- if (!res.ok) {
- throw (typeof text === 'string' ? new Error(text) : new Error(JSON.stringify(text)));
- }
- return text;
- }
- document.getElementById('registerForm').addEventListener('submit', async (e) => {
- e.preventDefault();
- const msg = document.getElementById('registerMsg');
- msg.className = 'msg';
- msg.textContent = 'Rejestracja...';
- const data = formToObject(e.target);
- try {
- await postJson(`${apiBase}/api/Register`, data);
- msg.className = 'msg success';
- msg.textContent = 'Rejestracja pomyślna';
- alert('Rejestracja zakończona sukcesem');
- } catch (err) {
- msg.className = 'msg error';
- msg.textContent = 'Błąd: ' + err.message;
- alert('Błąd rejestracji: ' + err.message);
- }
+ function formToObject(form){ const obj={}; new FormData(form).forEach((v,k)=>obj[k]=v); Object.keys(obj).forEach(k=>{ if(obj[k]==='') delete obj[k]; }); return obj; }
+ async function postJson(url, body){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'include'}); let text=await res.text(); try{text=JSON.parse(text);}catch{} if(!res.ok) throw (typeof text==='string'? new Error(text): new Error(JSON.stringify(text))); return text; }
+ document.getElementById('registerForm').addEventListener('submit', async e=>{
+ e.preventDefault(); const msg=document.getElementById('registerMsg'); msg.className='msg'; msg.textContent='Rejestracja...'; const data=formToObject(e.target);
+ try { await postJson(`${apiBase}/api/Register`, data); msg.className='msg success'; msg.textContent='Rejestracja pomyślna'; e.target.reset(); }
+ catch(err){ msg.className='msg error'; msg.textContent='Błąd: '+ err.message; }
  });
  </script>
 </body>

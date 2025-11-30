@@ -103,6 +103,34 @@ public class Program
                 }
             }
         }
+        using (var scope = app.Services.CreateScope())
+        {
+            // U¿ywaj UserManager<User>, bo tak skonfigurowano Identity
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            string email = "admin@admin.com";
+            string password = "Test1234,";
+
+            if (await userManager.FindByEmailAsync(email) == null)
+            {
+                var user = new User
+                {
+                    UserName = email,
+                    Email = email,
+                    First_name = "Admin",
+                    Last_name = "Admin"
+                };
+
+                var createResult = await userManager.CreateAsync(user, password);
+                if (createResult.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(user, "Admin");
+                }
+                else
+                {
+                    Console.WriteLine("Admin create failed: " + string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                }
+            }
+        }
 
         // -------------------------------
         //  SEEDOWANIE
