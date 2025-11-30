@@ -169,18 +169,17 @@ namespace Rent.Migrations
                     b.Property<bool>("Is_Reserved")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Name")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("RentalInfoId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Size")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Size")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<int?>("WarehouseId")
                         .HasColumnType("int");
@@ -353,13 +352,6 @@ namespace Rent.Migrations
                     b.Property<int?>("RentalInfoId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasDefaultValue("user");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -452,7 +444,7 @@ namespace Rent.Migrations
                         .HasMaxLength(9)
                         .HasColumnType("nvarchar(9)");
 
-                    b.Property<int?>("RentalInfoId")
+                    b.Property<int>("RentalInfoId")
                         .HasColumnType("int");
 
                     b.Property<string>("Role")
@@ -596,7 +588,9 @@ namespace Rent.Migrations
                 {
                     b.HasOne("Rent.Models.RentalInfo", "RentalInfo")
                         .WithMany("Workers")
-                        .HasForeignKey("RentalInfoId");
+                        .HasForeignKey("RentalInfoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Rent.Models.Warehouse", null)
                         .WithMany("workers")

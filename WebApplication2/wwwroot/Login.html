@@ -6,175 +6,36 @@
     <title>Logowanie</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #e6f3ff 0%, #d1e8ff 50%, #b3d9ff 100%);
-            font-family: 'Arial', sans-serif;
-        }
-
-        .buttons-top-right {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            z-index: 10;
-        }
-
-        .winter-button {
-            padding: 12px 18px;
-            background: linear-gradient(145deg, #66b3ff, #3399ff);
-            border: none;
-            border-radius: 10px;
-            color: #fff;
-            font-size: .75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .6px;
-            transition: .3s;
-            box-shadow: 0 4px 10px rgba(51, 153, 255, .35);
-            border: 2px solid #99ccff;
-        }
-
-        .winter-button:hover {
-            background: linear-gradient(145deg, #3399ff, #0077e6);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(51, 153, 255, .45);
-        }
-
-        .content-section {
-            padding: 120px 32px 40px;
-            max-width: 560px;
-        }
-
-        .frost-effect {
-            background: rgba(255, 255, 255, 0.18);
-            backdrop-filter: blur(15px);
-            border-radius: 18px;
-            padding: 34px 36px 30px;
-            border: 1px solid rgba(179, 224, 255, 0.6);
-            box-shadow: 0 8px 25px rgba(0, 100, 200, 0.15);
-        }
-
-        .winter-title {
-            color: #0066cc;
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 1.4rem;
-            text-shadow: 2px 2px 4px rgba(0, 102, 204, 0.15);
-            text-align: center;
-        }
-
-        label {
-            font-weight: 600;
-            font-size: .7rem;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-            color: #134a7c;
-            display: block;
-        }
-
-        input {
-            background: rgba(255, 255, 255, 0.78);
-            border: 1px solid #b3d9ff;
-            border-radius: 10px;
-            padding: .65rem .9rem;
-            margin-top: .45rem;
-            font-size: .9rem;
-            width: 100%;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #3399ff;
-            box-shadow: 0 0 3px rgba(51, 153, 255, 0.25);
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 14px 22px;
-            margin-top: 20px;
-            background: linear-gradient(145deg, #66b3ff, #3399ff);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-weight: 700;
-            font-size: .85rem;
-            letter-spacing: .8px;
-            text-transform: uppercase;
-            box-shadow: 0 4px 10px rgba(51, 153, 255, .35);
-            transition: .3s;
-        }
-
-        .submit-btn:hover {
-            background: linear-gradient(145deg, #3399ff, #0077e6);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(51, 153, 255, .45);
-        }
-
-        .msg {
-            margin-top: 14px;
-            font-size: .8rem;
-            white-space: pre-wrap;
-        }
-
-        .success {
-            color: #0c7a0c;
-        }
-
-        .error {
-            color: #b00020;
-        }
-
-        .alt-link {
-            margin-top: 16px;
-            text-align: center;
-            font-size: .75rem;
-        }
-
-        .alt-link a {
-            color: #0066cc;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .alt-link a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 780px) {
-            .content-section {
-                padding: 140px 16px 40px;
-                max-width: 100%;
-            }
-
-            .buttons-top-right {
-                position: static;
-                justify-content: center;
-                padding: 20px 10px 0;
-            }
-        }
-    </style>
+    <link href="/css/site.css" rel="stylesheet">
 </head>
 
 <body>
     <div class="buttons-top-right">
-        <button class="winter-button" type="button">❆ Menu</button>
-        <button class="winter-button" type="button">⛷️ Sprzęt</button>
-        <button class="winter-button" type="button" onclick="location.href='UserPanel.html'">👤 Panel użytkownika</button>
-        <button class="winter-button" type="button">📞 Kontakt</button>
-        <button class="winter-button" type="button">⚙️ Koszyk</button>
-        <button class="winter-button" type="button" onclick="location.href='Register.html'">📝 Rejestracja</button>
+        <button class="winter-button" type="button" onclick="location.href='Index.html'">❆ Menu</button>
+        <button class="winter-button" type="button" onclick="location.href='Equipment.html'">⛷️ Sprzęt</button>
+        <details class="user-panel disabled">
+            <summary class="winter-button" aria-label="Panel użytkownika">👤 Panel użytkownika</summary>
+            <div class="user-panel-menu">
+                <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Historia
+                    zamówień</button>
+                <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane
+                    użytkownika</button>
+                <button class="winter-button" type="button" onclick="location.href='WorkerPanel.html'"
+                    data-required-roles="worker, administrator">Panel pracownika</button>
+                <button class="winter-button" type="button" onclick="location.href='AdminPanel.html'"
+                    data-required-roles="administrator">Panel administratora</button>
+                <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">Wyloguj</button>
+            </div>
+        </details>
+        <button class="winter-button" type="button" onclick="location.href='Kontakt.html'">📞 Kontakt</button>
+        <button class="winter-button" type="button" data-nav="Basket.html">🧺 Koszyk</button>
+        <button class="winter-button" type="button" onclick="location.href='Register.html'"
+            data-hide-when-auth="true">📝 Rejestracja</button>
     </div>
-    <div class="content-section mx-auto">
+    <div class="content-section">
         <div class="frost-effect">
             <h1 class="winter-title">Logowanie</h1>
-            <form id="loginForm" novalidate>
+            <form id="loginForm" class="form-box" novalidate>
                 <div class="mb-3">
                     <label>Login (UserName)
                         <input type="text" name="UserName" required />
@@ -187,7 +48,8 @@
                 </div>
                 <button type="submit" class="submit-btn">Zaloguj</button>
                 <div id="loginMsg" class="msg"></div>
-                <div class="alt-link">Nie masz konta? <a href="Register.html">Zarejestruj się</a></div>
+                <div class="alt-link" data-hide-when-auth="true">Nie masz konta? <a href="Register.html">Zarejestruj
+                    się</a></div>
             </form>
         </div>
     </div>
@@ -219,12 +81,14 @@
 
                 msg.className = 'msg success';
                 msg.textContent = 'Logowanie pomyślne';
+                window.location.href = 'Index.html';
             } catch (err) {
                 msg.className = 'msg error';
                 msg.textContent = 'Błąd: ' + err.message;
             }
         });
     </script>
+    <script src="/js/site.js"></script>
 </body>
 
 </html>

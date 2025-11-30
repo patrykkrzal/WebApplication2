@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
+using Rent.Enums;
 namespace Rent.Models
 {
     public class Equipment
@@ -9,10 +9,9 @@ namespace Rent.Models
         [Key]
         public int Id { get; set; }
 
-        [MaxLength(255)]
-        public string? Name { get; set; }
+        public EquipmentType Type { get; set; }
 
-        public string? Size { get; set; }
+        public Size Size { get; set; }
 
         [Required]
         public bool Is_In_Werehouse { get; set; }

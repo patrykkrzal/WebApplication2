@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Rent.Data;
 using Rent.Models;
+using Rent.Enums; // enums for Equipment
 
 namespace Rent
 {
@@ -17,6 +18,7 @@ namespace Rent
 
         public void SeedDataContext()
         {
+            // Seed only once (based on users); adjust condition if needed
             if (!dataContext.Users.Any())
             {
                 var rentalInfo = new RentalInfo()
@@ -40,7 +42,6 @@ namespace Rent
                     Login = "pawel",
                     Email = "pawel@example.com",
                     PhoneNumber = "111222333",
-                    Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
                 };
@@ -52,7 +53,6 @@ namespace Rent
                     Login = "anna",
                     Email = "anna@example.com",
                     PhoneNumber = "444555666",
-                    Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
                 };
@@ -93,28 +93,31 @@ namespace Rent
                 rentalInfo.Workers.Add(worker1);
                 rentalInfo.Workers.Add(worker2);
 
-                var eq1 = new Equipment()
+                // New equipment seed using enum EquipmentType & Size
+                var equipmentItems = new List<Equipment>
                 {
-                    Size = "M",
-                    Is_In_Werehouse = true,
-                    Price = 100m,
+                    new Equipment { Type = EquipmentType.Skis, Size = Size.Small, Is_In_Werehouse = true, Price =120m },
+                    new Equipment { Type = EquipmentType.Skis, Size = Size.Medium, Is_In_Werehouse = true, Price =130m },
+                    new Equipment { Type = EquipmentType.Skis, Size = Size.Large, Is_In_Werehouse = true, Price =140m },
+                    new Equipment { Type = EquipmentType.Helmet, Size = Size.Universal, Is_In_Werehouse = true, Price =35m },
+                    new Equipment { Type = EquipmentType.Gloves, Size = Size.Small, Is_In_Werehouse = true, Price =15m },
+                    new Equipment { Type = EquipmentType.Gloves, Size = Size.Medium, Is_In_Werehouse = true, Price =15m },
+                    new Equipment { Type = EquipmentType.Gloves, Size = Size.Large, Is_In_Werehouse = true, Price =15m },
+                    new Equipment { Type = EquipmentType.Poles, Size = Size.Medium, Is_In_Werehouse = true, Price =22m },
+                    new Equipment { Type = EquipmentType.Snowbard, Size = Size.Medium, Is_In_Werehouse = true, Price =160m },
+                    new Equipment { Type = EquipmentType.Googles, Size = Size.Universal, Is_In_Werehouse = true, Price =55m }
                 };
 
-                var eq2 = new Equipment()
+                foreach (var eq in equipmentItems)
                 {
-                    Size = "L",
-                    Is_In_Werehouse = true,
-                    Price = 150m,
-                };
-
-                rentalInfo.Equipment.Add(eq1);
-                rentalInfo.Equipment.Add(eq2);
+                    rentalInfo.Equipment.Add(eq);
+                }
 
                 var order1 = new Order()
                 {
-                    Rented_Items = "Equipment1",
+                    Rented_Items = "Skis Small",
                     OrderDate = DateTime.Now,
-                    Price = 100m,
+                    Price = 120m,
                     Date_Of_submission = DateOnly.FromDateTime(DateTime.Now),
                     Was_It_Returned = false,
                 };

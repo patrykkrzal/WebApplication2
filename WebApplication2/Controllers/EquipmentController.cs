@@ -3,6 +3,8 @@ using Rent.Data;
 using Rent.DTO;
 using Rent.Models;
 using System.Linq;
+using Microsoft.EntityFrameworkCore; // for Database facade
+using Microsoft.AspNetCore.Authorization;
 
 namespace Rent.Controllers
 {
@@ -24,20 +26,22 @@ namespace Rent.Controllers
             return Ok(allEquipment);
         }
 
+        [Authorize(Roles="Admin,Worker")]
         [HttpPost("add")] // unique route to avoid Swagger conflicts
         public IActionResult AddEquipment([FromBody] CreateEquipmentDTO addEquipment)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var equipmentEntity = new Equipment()
-            {
-                Name = addEquipment.Name,
-                Price = addEquipment.Price,
-                Size = addEquipment.Size
-            };
-            dbContext.Equipment.Add(equipmentEntity);
-            dbContext.SaveChanges();
-            return Created($"/api/equipment/{equipmentEntity.Id}", equipmentEntity);
+            // use stored procedure spAddEquipment
+            dbContext.Database.ExecuteSqlRaw(
+                "EXEC dbo.spAddEquipment @p0, @p1, @p2",
+                (int)addEquipment.Type,
+                (int)addEquipment.Size,
+                addEquipment.Price
+            );
+
+            // Return refreshed list or simple acknowledgment
+            return Ok(new { Message = "Equipment added via stored procedure" });
         }
     }
 }

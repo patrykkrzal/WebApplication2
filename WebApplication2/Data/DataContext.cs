@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Rent.Models;
 
 namespace Rent.Data
-
 {
     public class DataContext : IdentityDbContext<User>
     {
@@ -28,21 +27,16 @@ namespace Rent.Data
 
             modelBuilder.Entity<OrderedItem>()
                 .HasOne(eo => eo.Equipment)
-                .WithMany(e => e.OrderedItems)  
+                .WithMany(e => e.OrderedItems)
                 .HasForeignKey(eo => eo.EquipmentId);
 
             modelBuilder.Entity<OrderedItem>()
                 .HasOne(eo => eo.Order)
-                .WithMany(o => o.OrderedItems)   
-                .HasForeignKey(eo => eo.OrderId); 
-
-
-           modelBuilder.Entity<User>().Property(u => u.Role).HasDefaultValue("user");
-
+                .WithMany(o => o.OrderedItems)
+                .HasForeignKey(eo => eo.OrderId);
         }
-    } 
-
     }
+}
 
 
 

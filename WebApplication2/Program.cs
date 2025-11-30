@@ -48,10 +48,12 @@ public class Program
         // Identity Core z obs³ug¹ ról
         builder.Services.AddIdentityCore<User>(options =>
         {
-            options.Password.RequireDigit = false;
-            options.Password.RequireLowercase = false;
-            options.Password.RequireUppercase = false;
+            options.Password.RequireDigit = true; // zaostrzenie has³a
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
             options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredLength = 8;
+            options.User.RequireUniqueEmail = true; // unikalny email
         })
         .AddRoles<IdentityRole>()
         .AddEntityFrameworkStores<DataContext>()
@@ -63,7 +65,11 @@ public class Program
             .AddBearerToken(IdentityConstants.BearerScheme)
             .AddCookie(IdentityConstants.ApplicationScheme);
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("IsWorker", policy => policy.RequireRole("Worker"));
+            options.AddPolicy("IsAdmin", policy => policy.RequireRole("Admin"));
+        });
 
         // -------------------------------
         //  BUDOWANIE APLIKACJI
@@ -168,17 +174,18 @@ public class Program
         app.MapControllers();
         app.MapIdentityApi<User>();
 
-        // Minimal endpoint — bie¿¹cy u¿ytkownik
-        app.MapGet("/api/users/me", async (ClaimsPrincipal claims, DataContext context) =>
+        // Minimal endpoint — bie¿¹cy u¿ytkownik (z list¹ ról)
+        app.MapGet("/api/users/me", async (ClaimsPrincipal claims, UserManager<User> userManager) =>
         {
             var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var user = await context.Users.FindAsync(userId);
+            var user = await userManager.FindByIdAsync(userId);
             if (user is null)
                 return Results.NotFound();
 
+            var roles = await userManager.GetRolesAsync(user);
             return Results.Ok(new
             {
                 user.Id,
@@ -188,7 +195,7 @@ public class Program
                 user.First_name,
                 user.Last_name,
                 user.Login,
-                user.Role
+                Roles = roles
             });
         }).RequireAuthorization();
 
@@ -196,7 +203,7 @@ public class Program
         app.MapGet("/api/users", async (DataContext context) =>
         {
             return await context.Users.ToListAsync();
-        });
+        }).RequireAuthorization("IsAdmin"); // ograniczenie publicznych endpointów
 
         // -------------------------------
         //  START APLIKACJI

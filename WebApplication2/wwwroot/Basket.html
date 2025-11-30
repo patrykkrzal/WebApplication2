@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+ <meta charset="UTF-8" />
+ <title>Koszyk</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+ <link href="/css/site.css" rel="stylesheet">
+</head>
+<body>
+ <div class="buttons-top-right">
+ <button class="winter-button" type="button" data-nav="Index.html">❆ Menu</button>
+ <button class="winter-button" type="button" data-nav="Equipment.html">⛷️ Sprzęt</button>
+ <details class="user-panel disabled">
+ <summary class="winter-button" aria-label="Panel użytkownika">👤 Panel użytkownika</summary>
+ <div class="user-panel-menu">
+ <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Historia zamówień</button>
+ <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane użytkownika</button>
+ <button class="winter-button" type="button" data-nav="WorkerPanel.html" data-required-roles="worker, administrator">Panel pracownika</button>
+ <button class="winter-button" type="button" data-nav="AdminPanel.html" data-required-roles="administrator">Panel administratora</button>
+ </div>
+ </details>
+ <button class="winter-button" type="button" data-nav="Kontakt.html">📞 Kontakt</button>
+ <button class="winter-button" type="button" data-nav="Basket.html">🧺 Koszyk</button>
+ <button class="winter-button" type="button" data-nav="Login.html" data-hide-when-auth="true">🔒 Logowanie</button>
+ <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">🚪 Wyloguj</button>
+ </div>
+ <div class="content-section">
+ <div class="frost-effect">
+ <h1 class="winter-title">Twój koszyk</h1>
+ <div class="contact-info" id="basketContent">
+ <div class="contact-item">🛒 <strong>Pozycje</strong><div class="contact-value" id="basketItems">Brak pozycji w koszyku.</div></div>
+ <div class="contact-item">💰 <strong>Suma</strong><div class="contact-value" id="basketTotal">0,00 zł</div></div>
+ <div class="block-actions">
+ <button class="winter-button" type="button" data-nav="Equipment.html">➕ Dodaj ze sprzętu</button>
+ <button class="winter-button" type="button" id="checkoutBtn">✅ Zamów</button>
+ </div>
+ </div>
+ </div>
+ </div>
+ <script src="/js/site.js" defer></script>
+ <script>
+ // Prosty placeholder; integracja z logiką koszyka do uzupełnienia
+ document.getElementById('checkoutBtn').addEventListener('click', function(){
+ alert('Finalizacja zamówienia – funkcja w przygotowaniu.');
+ });
+ </script>
+</body>
+</html>
