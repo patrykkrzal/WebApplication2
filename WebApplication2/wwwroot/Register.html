@@ -16,13 +16,13 @@
  <div class="user-panel-menu">
  <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Historia zamówień</button>
  <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane użytkownika</button>
- <button class="winter-button" type="button" onclick="location.href='WorkerPanel.html'" data-required-roles="worker, administrator">Panel pracownika</button>
- <button class="winter-button" type="button" onclick="location.href='AdminPanel.html'" data-required-roles="administrator">Panel administratora</button>
+ <button class="winter-button" type="button" onclick="location.href='WorkerPanel.html'" data-required-roles="worker, admin">Panel pracownika</button>
+ <button class="winter-button" type="button" onclick="location.href='AdminPanel.html'" data-required-roles="admin">Panel administratora</button>
  <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">Wyloguj</button>
  </div>
  </details>
  <button class="winter-button" type="button" onclick="location.href='Kontakt.html'">📞 Kontakt</button>
- <button class="winter-button" type="button" data-nav="Basket.html">🧺 Koszyk</button>
+ <button class="winter-button" type="button" data-nav="Basket.html">🛒 Koszyk</button>
  <button class="winter-button" type="button" onclick="location.href='Login.html'" data-hide-when-auth="true">🔒 Logowanie</button>
  </div>
  <div class="content-section">
@@ -61,11 +61,7 @@
  <input type="text" name="ContactNumber" required />
  </label>
  </div>
- <div class="mb-3">
- <label>Alias Login (opcjonalnie)
- <input type="text" name="Login" />
- </label>
- </div>
+
  <button type="submit" class="submit-btn">Zarejestruj</button>
  <div id="registerMsg" class="msg"></div>
  <div class="alt-link">Masz już konto? <a href="Login.html">Zaloguj się</a></div>

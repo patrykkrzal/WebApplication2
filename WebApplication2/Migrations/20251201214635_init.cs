@@ -26,6 +26,24 @@ namespace Rent.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Logs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Level = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Scope = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Exception = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Logs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RentalInfo",
                 columns: table => new
                 {
@@ -277,6 +295,9 @@ namespace Rent.Migrations
                     Rented_Items = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    BasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Days = table.Column<int>(type: "int", nullable: true),
+                    ItemsCount = table.Column<int>(type: "int", nullable: true),
                     Date_Of_submission = table.Column<DateOnly>(type: "date", nullable: false),
                     Was_It_Returned = table.Column<bool>(type: "bit", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
@@ -303,7 +324,6 @@ namespace Rent.Migrations
                 {
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     EquipmentId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     PriceWhenOrdered = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
@@ -426,6 +446,9 @@ namespace Rent.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Logs");
 
             migrationBuilder.DropTable(
                 name: "OrderedItems");

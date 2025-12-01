@@ -27,9 +27,14 @@ namespace Rent.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _signInManager.PasswordSignInAsync(dto.UserName, dto.Password, isPersistent: false, lockoutOnFailure: false);
+            // Authenticate by email: find user by email, then sign in by username
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return Unauthorized(new { Message = "Invalid email or password" });
+
+            var result = await _signInManager.PasswordSignInAsync(user.UserName, dto.Password, isPersistent: false, lockoutOnFailure: false);
             if (!result.Succeeded)
-                return Unauthorized(new { Message = "Invalid username or password" });
+                return Unauthorized(new { Message = "Invalid email or password" });
 
             return Ok(new { Message = "Login successful" });
         }

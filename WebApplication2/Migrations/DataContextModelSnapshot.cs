@@ -193,6 +193,39 @@ namespace Rent.Migrations
                     b.ToTable("Equipment");
                 });
 
+            modelBuilder.Entity("Rent.Models.LogEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Exception")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Scope")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Logs", (string)null);
+                });
+
             modelBuilder.Entity("Rent.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -201,8 +234,17 @@ namespace Rent.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("BasePrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateOnly>("Date_Of_submission")
                         .HasColumnType("date");
+
+                    b.Property<int?>("Days")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ItemsCount")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
@@ -230,7 +272,12 @@ namespace Rent.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", null, t =>
+                        {
+                            t.HasTrigger("trg_Orders_ValidateDiscount");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("Rent.Models.OrderedItem", b =>
@@ -239,9 +286,6 @@ namespace Rent.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Id")
                         .HasColumnType("int");
 
                     b.Property<decimal>("PriceWhenOrdered")
@@ -530,11 +574,13 @@ namespace Rent.Migrations
                         .WithMany("Equipment")
                         .HasForeignKey("RentalInfoId");
 
-                    b.HasOne("Rent.Models.Warehouse", null)
+                    b.HasOne("Rent.Models.Warehouse", "Warehouse")
                         .WithMany("Equipment")
                         .HasForeignKey("WarehouseId");
 
                     b.Navigation("RentalInfo");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Order", b =>
@@ -577,11 +623,13 @@ namespace Rent.Migrations
                         .WithMany("Users")
                         .HasForeignKey("RentalInfoId");
 
-                    b.HasOne("Rent.Models.Warehouse", null)
-                        .WithMany("users")
+                    b.HasOne("Rent.Models.Warehouse", "Warehouse")
+                        .WithMany("Users")
                         .HasForeignKey("WarehouseId");
 
                     b.Navigation("RentalInfo");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Worker", b =>
@@ -592,11 +640,13 @@ namespace Rent.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Rent.Models.Warehouse", null)
-                        .WithMany("workers")
+                    b.HasOne("Rent.Models.Warehouse", "Warehouse")
+                        .WithMany("Workers")
                         .HasForeignKey("WarehouseId");
 
                     b.Navigation("RentalInfo");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Equipment", b =>
@@ -629,9 +679,9 @@ namespace Rent.Migrations
                 {
                     b.Navigation("Equipment");
 
-                    b.Navigation("users");
+                    b.Navigation("Users");
 
-                    b.Navigation("workers");
+                    b.Navigation("Workers");
                 });
 #pragma warning restore 612, 618
         }

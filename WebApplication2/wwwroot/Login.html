@@ -21,14 +21,14 @@
                 <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane
                     użytkownika</button>
                 <button class="winter-button" type="button" onclick="location.href='WorkerPanel.html'"
-                    data-required-roles="worker, administrator">Panel pracownika</button>
+                    data-required-roles="worker, admin">Panel pracownika</button>
                 <button class="winter-button" type="button" onclick="location.href='AdminPanel.html'"
-                    data-required-roles="administrator">Panel administratora</button>
+                    data-required-roles="admin">Panel administratora</button>
                 <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">Wyloguj</button>
             </div>
         </details>
         <button class="winter-button" type="button" onclick="location.href='Kontakt.html'">📞 Kontakt</button>
-        <button class="winter-button" type="button" data-nav="Basket.html">🧺 Koszyk</button>
+        <button class="winter-button" type="button" data-nav="Basket.html">🛒 Koszyk</button>
         <button class="winter-button" type="button" onclick="location.href='Register.html'"
             data-hide-when-auth="true">📝 Rejestracja</button>
     </div>
@@ -37,8 +37,9 @@
             <h1 class="winter-title">Logowanie</h1>
             <form id="loginForm" class="form-box" novalidate>
                 <div class="mb-3">
-                    <label>Login (UserName)
-                        <input type="text" name="UserName" required />
+                    <label>
+                        Email
+                        <input type="text" name="Email" required />
                     </label>
                 </div>
                 <div class="mb-3">

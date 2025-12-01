@@ -18,6 +18,11 @@ namespace Rent.Models
         [Required]
         public decimal Price { get; set; }
 
+        // store calculation inputs for UI/history
+        public decimal? BasePrice { get; set; }
+        public int? Days { get; set; }
+        public int? ItemsCount { get; set; }
+
         [Required]
         public DateOnly Date_Of_submission { get; set; }
 

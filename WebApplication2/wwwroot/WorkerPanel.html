@@ -6,43 +6,103 @@
  <meta name="viewport" content="width=device-width, initial-scale=1" />
  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
  <link href="/css/site.css" rel="stylesheet">
+ <style>
+ .order-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:.8rem;margin:.6rem0}
+ .order-items{font-size:.9rem;margin-top:.4rem}
+ .order-actions{display:flex;gap:.5rem;margin-top:.6rem}
+ .ok{background:#27ae60;color:#fff}
+ .danger{background:#c0392b;color:#fff}
+ .info{background:#2980b9;color:#fff}
+ .grid{display:grid;gap:1rem}
+ .col{background:transparent;padding:.2rem}
+ .section-title{margin:.2rem0 .6rem0}
+ </style>
 </head>
 <body>
  <div class="buttons-top-right">
  <button class="winter-button" type="button" data-nav="Index.html">❆ Menu</button>
  <button class="winter-button" type="button" data-nav="Equipment.html">⛷️ Sprzęt</button>
- <details class="user-panel">
+ <details class="user-panel disabled">
  <summary class="winter-button" aria-label="Panel użytkownika">👤 Panel użytkownika</summary>
  <div class="user-panel-menu">
- <button class="winter-button" type="button" data-nav="OrderHistory.html">Historia zamówień</button>
- <button class="winter-button" type="button" data-nav="UserData.html">Dane użytkownika</button>
- <button class="winter-button" type="button" data-nav="WorkerPanel.html" data-required-roles="Worker,Admin">Panel pracownika</button>
- <button class="winter-button" type="button" data-nav="AdminPanel.html" data-required-roles="Admin">Panel administratora</button>
+ <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Historia zamówień</button>
+ <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane użytkownika</button>
+ <button class="winter-button" type="button" data-nav="WorkerPanel.html" data-required-roles="worker, admin">Panel pracownika</button>
+ <button class="winter-button" type="button" data-nav="AdminPanel.html" data-required-roles="admin">Panel administratora</button>
  </div>
  </details>
  <button class="winter-button" type="button" data-nav="Kontakt.html">📞 Kontakt</button>
- <button class="winter-button" type="button" data-nav="Login.html" data-hide-when-auth="true">🔒 Logowanie</button>
+ <button class="winter-button" type="button" data-nav="Basket.html">🛒 Koszyk</button>
  <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">🚪 Wyloguj</button>
+ <button class="winter-button" type="button" data-nav="Login.html" data-hide-when-auth="true">🔒 Logowanie</button>
  </div>
  <div class="content-section">
- <div class="frost-effect">
+ <div class="frost-effect grid">
  <h1 class="winter-title">Panel pracownika</h1>
- <p>Zarządzanie zamówieniami, sprzętem i danymi wypożyczalni.</p>
+ <div class="col">
+ <h2 class="section-title">Oczekujące (do wydania)</h2>
+ <div id="ordersPending"></div>
+ </div>
+ <div class="col">
+ <h2 class="section-title">Wydane (czekają na zwrot)</h2>
+ <div id="ordersIssued"></div>
+ </div>
  </div>
  </div>
  <script src="/js/site.js" defer></script>
  <script>
  (async function(){
- function waitForAuth(){
- return new Promise(resolve=>{
- if (window.auth) return resolve();
- let tries=0; const t=setInterval(()=>{ tries++; if(window.auth||tries>50){clearInterval(t); resolve();}},50);
- });
- }
+ function waitForAuth(){return new Promise(r=>{if(window.auth)return r();let t=0;const i=setInterval(()=>{t++;if(window.auth||t>50){clearInterval(i);r();}},50);});}
  await waitForAuth();
- if (!window.auth || !window.auth.hasAnyRole('Worker','Admin')) {
- window.location.href = 'Login.html';
+ if (!window.auth || !window.auth.hasAnyRole('Worker','Admin')) { window.location.href = 'Login.html'; return; }
+ const P = document.getElementById('ordersPending');
+ const I = document.getElementById('ordersIssued');
+
+ function render(list, type){
+ if(!Array.isArray(list) || !list.length) return '<div class="contact-item">Brak zamówień.</div>';
+ return list.map(o=>{
+ const user = o.User ? `${o.User.First_name||o.User.first_name||''} ${o.User.Last_name||o.User.last_name||''}`.trim() : '—';
+ const total = Number(o.Price||0).toFixed(2);
+ const items = (o.Items||[]).map(i=>`${i.Type} ${i.Size} × ${i.Quantity} — ${Number(i.PriceWhenOrdered||0).toFixed(2)} zł`).join('<br>');
+ let actions = '';
+ if(type==='pending') actions = `<button class='winter-button ok' data-accept='${o.Id}'>Akceptuj (wydaj)</button><button class='winter-button danger' data-reject='${o.Id}'>Odrzuć</button>`;
+ else actions = `<button class='winter-button info' data-return='${o.Id}'>Zwrot</button>`;
+ return `<div class='order-card'>
+ <div><strong>Zamówienie #${o.Id}</strong> — ${user} — Suma: ${total} zł</div>
+ <div class='order-items'>${items}</div>
+ <div class='order-actions'>${actions}</div>
+ </div>`; }).join('');
  }
+
+ async function load(){
+ const [pRes, iRes] = await Promise.all([
+ fetch('/api/orders/pending',{credentials:'include'}),
+ fetch('/api/orders/issued',{credentials:'include'})
+ ]);
+ const pending = pRes.ok ? await pRes.json() : [];
+ const issued = iRes.ok ? await iRes.json() : [];
+ P.innerHTML = render(pending,'pending');
+ I.innerHTML = render(issued,'issued');
+ bind();
+ }
+ async function postOrAlert(url){
+ try{
+ const res = await fetch(url,{method:'POST',credentials:'include'});
+ const txt = await res.text();
+ if(!res.ok) throw new Error(txt||('HTTP '+res.status));
+ return txt;
+ }catch(err){
+ alert('Błąd operacji: ' + (err?.message||err));
+ throw err;
+ }
+ }
+ function bind(){
+ P.querySelectorAll('[data-accept]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-accept'); try{ await postOrAlert(`/api/orders/${id}/accept`);} finally{ b.disabled=false; load(); } });
+ P.querySelectorAll('[data-reject]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-reject'); try{ await postOrAlert(`/api/orders/${id}/reject`);} finally{ b.disabled=false; load(); } });
+ I.querySelectorAll('[data-return]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-return'); try{ await postOrAlert(`/api/orders/${id}/returned`);} finally{ b.disabled=false; load(); } });
+ }
+
+ load();
  })();
  </script>
 </body>

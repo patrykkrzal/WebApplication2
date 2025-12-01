@@ -24,5 +24,9 @@ namespace Rent.Models
         public ICollection<OrderedItem> OrderedItems { get; set; } = new List<OrderedItem>();
 
         public RentalInfo? RentalInfo { get; set; }
+        public int? RentalInfoId { get; set; }
+
+        public Warehouse? Warehouse { get; set; }
+        public int? WarehouseId { get; set; }
     }
 }

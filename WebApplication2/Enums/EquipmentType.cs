@@ -2,11 +2,11 @@
 {
     public enum EquipmentType
     { 
-        Snowbard, 
+        Snowboard, 
         Gloves, 
         Poles, 
         Helmet, 
         Skis, 
-        Googles
+        Goggles
     }
 }

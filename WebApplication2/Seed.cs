@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Rent.Data;
 using Rent.Models;
-using Rent.Enums; // enums for Equipment
+using Rent.Enums;
 
 namespace Rent
 {
@@ -18,8 +18,8 @@ namespace Rent
 
         public void SeedDataContext()
         {
-            // Seed only once (based on users); adjust condition if needed
-            if (!dataContext.Users.Any())
+            // Seed only if brak rekordów w RentalInfo (nie Users bo admin już istnieje)
+            if (!dataContext.RentalInfo.Any())
             {
                 var rentalInfo = new RentalInfo()
                 {
@@ -93,39 +93,50 @@ namespace Rent
                 rentalInfo.Workers.Add(worker1);
                 rentalInfo.Workers.Add(worker2);
 
-                // New equipment seed using enum EquipmentType & Size
-                var equipmentItems = new List<Equipment>
+                // Generate items
+                void AddItems(EquipmentType type, Size size, decimal price, int count = 5)
                 {
-                    new Equipment { Type = EquipmentType.Skis, Size = Size.Small, Is_In_Werehouse = true, Price =120m },
-                    new Equipment { Type = EquipmentType.Skis, Size = Size.Medium, Is_In_Werehouse = true, Price =130m },
-                    new Equipment { Type = EquipmentType.Skis, Size = Size.Large, Is_In_Werehouse = true, Price =140m },
-                    new Equipment { Type = EquipmentType.Helmet, Size = Size.Universal, Is_In_Werehouse = true, Price =35m },
-                    new Equipment { Type = EquipmentType.Gloves, Size = Size.Small, Is_In_Werehouse = true, Price =15m },
-                    new Equipment { Type = EquipmentType.Gloves, Size = Size.Medium, Is_In_Werehouse = true, Price =15m },
-                    new Equipment { Type = EquipmentType.Gloves, Size = Size.Large, Is_In_Werehouse = true, Price =15m },
-                    new Equipment { Type = EquipmentType.Poles, Size = Size.Medium, Is_In_Werehouse = true, Price =22m },
-                    new Equipment { Type = EquipmentType.Snowbard, Size = Size.Medium, Is_In_Werehouse = true, Price =160m },
-                    new Equipment { Type = EquipmentType.Googles, Size = Size.Universal, Is_In_Werehouse = true, Price =55m }
-                };
-
-                foreach (var eq in equipmentItems)
-                {
-                    rentalInfo.Equipment.Add(eq);
+                    for (int i = 0; i < count; i++)
+                    {
+                        rentalInfo.Equipment.Add(new Equipment
+                        {
+                            Type = type,
+                            Size = size,
+                            Is_In_Werehouse = true,
+                            Is_Reserved = false,
+                            Price = price,
+                            RentalInfo = rentalInfo
+                        });
+                    }
                 }
 
+                AddItems(EquipmentType.Skis, Size.Small, 120m);
+                AddItems(EquipmentType.Skis, Size.Medium, 130m);
+                AddItems(EquipmentType.Skis, Size.Large, 140m);
+                AddItems(EquipmentType.Helmet, Size.Universal, 35m);
+                AddItems(EquipmentType.Gloves, Size.Small, 15m);
+                AddItems(EquipmentType.Gloves, Size.Medium, 15m);
+                AddItems(EquipmentType.Gloves, Size.Large, 15m);
+                AddItems(EquipmentType.Poles, Size.Medium, 22m);
+                AddItems(EquipmentType.Snowboard, Size.Medium, 160m);
+                AddItems(EquipmentType.Goggles, Size.Universal, 55m);
+
+                // Pierwszy zapis: RentalInfo + Users + Workers + Equipment
+                dataContext.RentalInfo.Add(rentalInfo);
+                dataContext.SaveChanges();
+
+                // Dodaj przykładowe zamówienie po zapisaniu bazowych danych
                 var order1 = new Order()
                 {
                     Rented_Items = "Skis Small",
-                    OrderDate = DateTime.Now,
+                    OrderDate = DateTime.UtcNow,
                     Price = 120m,
-                    Date_Of_submission = DateOnly.FromDateTime(DateTime.Now),
+                    Date_Of_submission = DateOnly.FromDateTime(DateTime.UtcNow),
                     Was_It_Returned = false,
+                    User = user1,
+                    RentalInfo = rentalInfo
                 };
-
-                rentalInfo.Orders.Add(order1);
-                user1.Orders.Add(order1);
-
-                dataContext.RentalInfo.Add(rentalInfo);
+                dataContext.Orders.Add(order1);
                 dataContext.SaveChanges();
             }
         }

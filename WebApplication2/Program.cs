@@ -7,6 +7,10 @@ using Rent.Interfaces;
 using Rent.Ropository;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using System.Text.Json.Serialization; // enum string converter
+using Microsoft.Data.SqlClient;
+using System.IO;
+using System.Text.RegularExpressions;
 
 public class Program
 {
@@ -24,7 +28,13 @@ public class Program
         // -------------------------------
 
         // Controllers
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(o =>
+            {
+                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); // enumy jako pe³ne nazwy
+                o.JsonSerializerOptions.PropertyNamingPolicy = null; // Zachowaj oryginalne nazwy w³aœciwoœci (PascalCase)
+                o.JsonSerializerOptions.DictionaryKeyPolicy = null; // Zachowaj klucze s³owników w oryginalnej formie
+            });
 
         // Repozytoria
         builder.Services.AddScoped<IRentalInfoRepository, RentalInfoRepository>();
@@ -77,7 +87,7 @@ public class Program
         var app = builder.Build();
 
         // -------------------------------
-        //  MIGRACJE DB (AUTO)
+        //  MIGRACJE DB (AUTO) + DDL skrypty
         // -------------------------------
         using (var scope = app.Services.CreateScope())
         {
@@ -91,6 +101,40 @@ public class Program
             {
                 Console.WriteLine("Database migrate failed: " + ex.Message);
             }
+
+            // Execute DatabaseObjects.sql to create functions/procedures required by controllers
+            try
+            {
+                var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+                var basePath = AppContext.BaseDirectory;
+                // Try to locate file relative to content root
+                var contentRoot = builder.Environment.ContentRootPath;
+                var sqlPathCandidates = new[]
+                {
+                    Path.Combine(contentRoot, "WebApplication2", "DatabaseObjects.sql"),
+                    Path.Combine(contentRoot, "DatabaseObjects.sql"),
+                    Path.Combine(basePath, "DatabaseObjects.sql")
+                };
+                string? sqlPath = sqlPathCandidates.FirstOrDefault(File.Exists);
+                if (sqlPath != null)
+                {
+                    var script = await File.ReadAllTextAsync(sqlPath);
+                    await ExecuteSqlScriptBatchedAsync(cs, script);
+                    Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                }
+                else
+                {
+                    Console.WriteLine("DatabaseObjects.sql not found; skipping SP/func initialization.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Executing DatabaseObjects.sql failed: " + ex.Message);
+            }
+
+            // Seed po migracji (jeœli pusty RentalInfo)
+            var seeder = scope.ServiceProvider.GetRequiredService<Seed>();
+            seeder.SeedDataContext();
         }
 
         // -------------------------------
@@ -209,5 +253,19 @@ public class Program
         //  START APLIKACJI
         // -------------------------------
         app.Run();
+    }
+
+    private static async Task ExecuteSqlScriptBatchedAsync(string connectionString, string script)
+    {
+        // Split on lines containing only GO (case-insensitive)
+        var batches = Regex.Split(script, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)
+            .Where(s => !string.IsNullOrWhiteSpace(s));
+        using var conn = new SqlConnection(connectionString);
+        await conn.OpenAsync();
+        foreach (var batch in batches)
+        {
+            using var cmd = new SqlCommand(batch, conn);
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

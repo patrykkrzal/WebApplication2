@@ -14,9 +14,8 @@ namespace Rent.Models
         [MaxLength(255)]
         public string? Sizes { get; set; }
 
-        public ICollection<Worker> workers { get; set; } 
-        public ICollection<User> users { get; set; }
-
-        public ICollection<Equipment> Equipment { get; set; }
+        public ICollection<Worker> Workers { get; set; } = new List<Worker>();
+        public ICollection<User> Users { get; set; } = new List<User>();
+        public ICollection<Equipment> Equipment { get; set; } = new List<Equipment>();
     }
 }

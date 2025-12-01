@@ -18,10 +18,12 @@ namespace Rent.Models
         [MaxLength(50)]
         public string? Login { get; set; }
 
-        [NotMapped]
-        public string? Role { get; set; } // temporary for migration removal
-
         public RentalInfo? RentalInfo { get; set; }
+        public int? RentalInfoId { get; set; }
+
+        public Warehouse? Warehouse { get; set; }
+        public int? WarehouseId { get; set; }
+
         public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

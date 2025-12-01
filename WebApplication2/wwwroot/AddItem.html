@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <title>Add equipment</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+ <link href="/css/site.css" rel="stylesheet">
+</head>
+<body>
+ <div class="buttons-top-right">
+ <button class="winter-button" type="button" data-nav="Index.html">❆ Menu</button>
+ <button class="winter-button" type="button" data-nav="Equipment.html">⛷️ Equipment</button>
+ <details class="user-panel disabled">
+ <summary class="winter-button" aria-label="User panel">👤 User panel</summary>
+ <div class="user-panel-menu">
+ <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Order history</button>
+ <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">User data</button>
+ <button class="winter-button" type="button" data-nav="WorkerPanel.html" data-required-roles="worker, admin">Worker panel</button>
+ <button class="winter-button" type="button" data-nav="AdminPanel.html" data-required-roles="admin">Admin panel</button>
+ <button class="winter-button" type="button" data-nav="AddItem.html" data-required-roles="worker, admin">Add Equipment</button>
+ </div>
+ </details>
+ <button class="winter-button" type="button" data-nav="Kontakt.html">📞 Contact</button>
+ <button class="winter-button" type="button" data-nav="Basket.html">🛒 Basket</button>
+ <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">🚪 Logout</button>
+ <button class="winter-button" type="button" data-nav="Login.html" data-hide-when-auth="true">🔒 Login</button>
+ </div>
+
+ <div class="content-section">
+ <div class="frost-effect">
+ <h1 class="winter-title">Add new equipment</h1>
+ <p class="mb-3">This form is available only for Admin or Worker roles.</p>
+
+ <div id="roleGuard" class="alert alert-warning" style="display:none">Insufficient permissions. This page is available only to users with Admin or Worker role.</div>
+
+ <!-- Collapsible panel like user-panel -->
+ <details class="user-panel" id="addPanel" open>
+ <summary class="winter-button" aria-label="Add equipment">➕ Add Equipment</summary>
+ <form id="addItemForm" class="form-box" novalidate style="display:none">
+ <div class="mb-3">
+ <label for="type">Equipment type</label>
+ <select id="type" name="Type" class="form-select" required>
+ <option value="">-- select --</option>
+ <option value="Skis">Skis</option>
+ <option value="Helmet">Helmet</option>
+ <option value="Gloves">Gloves</option>
+ <option value="Poles">Poles</option>
+ <option value="Snowboard">Snowboard</option>
+ <option value="Goggles">Goggles</option>
+ </select>
+ </div>
+ <div class="mb-3">
+ <label for="size">Size</label>
+ <select id="size" name="Size" class="form-select" required disabled>
+ <option value="">Select type first</option>
+ </select>
+ <div id="sizeHint" class="form-text">Available sizes depend on selected type and current stock.</div>
+ </div>
+ <button type="submit" class="submit-btn">Add</button>
+ <div id="msg" class="msg"></div>
+ </form>
+ </details>
+ </div>
+ </div>
+
+ <script>
+ const apiBase = '';
+ function toDto(form){ const data=new FormData(form); const type=data.get('Type'); const size=data.get('Size'); return { Type: type, Size: size }; }
+ async function postJson(url, body){ const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'include'}); let text=await res.text(); try{text=JSON.parse(text);}catch{} if(!res.ok) throw (typeof text==='string'? new Error(text): new Error(JSON.stringify(text))); return text; }
+ async function getMe(){ let res=await fetch(`${apiBase}/api/Auth/me`, { credentials:'include' }); if(!res.ok) res=await fetch('/api/users/me', { credentials:'include' }); if(!res.ok) return null; try { return await res.json(); } catch { return null; } }
+ async function getAvailability(){ try{ const res=await fetch(`${apiBase}/api/equipment/availability`, { credentials:'include' }); if(!res.ok) return []; return await res.json(); }catch{ return []; } }
+
+ let availabilityByType = {};
+ function buildAvailabilityMap(items){
+ availabilityByType = {};
+ items.forEach(x=>{
+ const t = String(x.Type||'').trim();
+ const s = String(x.Size||'').trim();
+ if(!t || !s) return;
+ (availabilityByType[t] ||= new Set()).add(s);
+ });
+ }
+
+ function populateSizesForType(type){
+ const sizeSelect = document.getElementById('size');
+ sizeSelect.innerHTML = '';
+ const sizes = availabilityByType[type] ? Array.from(availabilityByType[type]) : [];
+ if(sizes.length ===0){
+ const fallback = { Skis: ['Small','Medium','Large'], Snowboard: ['Small','Medium','Large'], Poles: ['Small','Medium','Large'], Helmet: ['Small','Medium','Large'], Gloves: ['Small','Medium','Large'], Goggles: ['Universal'] };
+ (fallback[type]||['Small','Medium','Large']).forEach(sz=>{ const opt = document.createElement('option'); opt.value = sz; opt.textContent = sz; sizeSelect.appendChild(opt); });
+ } else { sizes.forEach(sz=>{ const opt=document.createElement('option'); opt.value=sz; opt.textContent=sz; sizeSelect.appendChild(opt); }); }
+ sizeSelect.disabled = false;
+ }
+
+ async function ensureRoles(){
+ const me = await getMe();
+ const guard = document.getElementById('roleGuard');
+ const form = document.getElementById('addItemForm');
+ const hasAccess = me && (Array.isArray(me.Roles) || Array.isArray(me.roles)) && (me.Roles||me.roles).some(r=>['Admin','Worker'].includes(r));
+ if(!hasAccess){ guard.style.display='block'; form.style.display='none'; document.getElementById('addPanel').classList.add('disabled'); }
+ else { guard.style.display='none'; form.style.display='block'; document.getElementById('addPanel').classList.remove('disabled'); }
+ }
+
+ document.getElementById('type').addEventListener('change', (e)=>{
+ const type = e.target.value;
+ const sizeSelect = document.getElementById('size');
+ if(!type){ sizeSelect.innerHTML = '<option value="">Select type first</option>'; sizeSelect.disabled=true; return; }
+ populateSizesForType(type);
+ });
+
+ document.getElementById('addItemForm').addEventListener('submit', async e => {
+ e.preventDefault();
+ const msg = document.getElementById('msg');
+ msg.className = 'msg';
+ msg.textContent = 'Adding...';
+ try {
+ const dto = toDto(e.target);
+ const result = await postJson(`${apiBase}/api/equipment/add`, dto);
+ msg.className = 'msg success';
+ msg.textContent = `Added: ${result.type ?? dto.Type} ${result.size ?? dto.Size}. Price: ${result.Price}`;
+ e.target.reset();
+ document.getElementById('size').disabled = true;
+ document.getElementById('size').innerHTML = '<option value="">Select type first</option>';
+ } catch(err){
+ msg.className = 'msg error';
+ msg.textContent = 'Error: ' + err.message;
+ }
+ });
+
+ (async function init(){
+ await ensureRoles();
+ const items = await getAvailability();
+ buildAvailabilityMap(items);
+ })();
+ </script>
+ <script src="/js/site.js" defer></script>
+</body>
+</html>
