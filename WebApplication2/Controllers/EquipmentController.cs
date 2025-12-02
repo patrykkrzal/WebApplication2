@@ -3,6 +3,9 @@ using Rent.Data;
 using Rent.DTO;
 using Rent.Models;
 using System.Linq;
+using Microsoft.EntityFrameworkCore; // for Database facade
+using Microsoft.AspNetCore.Authorization;
+using Rent.Enums;
 
 namespace Rent.Controllers
 {
@@ -24,20 +27,61 @@ namespace Rent.Controllers
             return Ok(allEquipment);
         }
 
+        private decimal ResolvePrice(EquipmentType type, Size size)
+        {
+            // Stałe ceny według typu + ewentualny rozmiar
+            return type switch
+            {
+                EquipmentType.Skis => size switch
+                {
+                    Size.Small =>120m,
+                    Size.Medium =>130m,
+                    Size.Large =>140m,
+                    _ =>130m
+                },
+                EquipmentType.Helmet =>35m,
+                EquipmentType.Gloves =>15m,
+                EquipmentType.Poles =>22m,
+                EquipmentType.Snowboard =>160m,
+                EquipmentType.Goggles =>55m,
+                _ =>0m
+            };
+        }
+
+        [HttpGet("availability")]
+        public IActionResult GetAvailability()
+        {
+            var grouped = dbContext.Equipment
+                .Where(e => e.Is_In_Werehouse && !e.Is_Reserved)
+                .GroupBy(e => new { e.Type, e.Size })
+                .Select(g => new
+                {
+                    Type = g.Key.Type.ToString(),
+                    Size = g.Key.Size.ToString(),
+                    Count = g.Count(),
+                    UnitPrice = g.First().Price
+                })
+                .ToList();
+            return Ok(grouped);
+        }
+
+        [Authorize(Roles="Admin,Worker")]
         [HttpPost("add")] // unique route to avoid Swagger conflicts
-        public IActionResult AddEquipment([FromBody] CreateEquipmentDTO addEquipment)
+        public IActionResult AddEquipment([FromBody] CreateEquipmentDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            var price = ResolvePrice(dto.Type, dto.Size);
 
-            var equipmentEntity = new Equipment()
-            {
-                Name = addEquipment.Name,
-                Price = addEquipment.Price,
-                Size = addEquipment.Size
-            };
-            dbContext.Equipment.Add(equipmentEntity);
-            dbContext.SaveChanges();
-            return Created($"/api/equipment/{equipmentEntity.Id}", equipmentEntity);
+            // use stored procedure spAddEquipment
+            dbContext.Database.ExecuteSqlRaw(
+                "EXEC dbo.spAddEquipment @p0, @p1, @p2",
+                (int)dto.Type,
+                (int)dto.Size,
+                price
+            );
+
+            // Return refreshed list or simple acknowledgment
+            return Ok(new { Message = "Equipment added", dto.Type, dto.Size, Price = price });
         }
     }
 }

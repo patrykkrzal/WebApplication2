@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Rent.Data;
 using Rent.Models;
+using Rent.Enums;
 
 namespace Rent
 {
@@ -17,7 +18,8 @@ namespace Rent
 
         public void SeedDataContext()
         {
-            if (!dataContext.Users.Any())
+            // Seed only if brak rekordów w RentalInfo (nie Users bo admin już istnieje)
+            if (!dataContext.RentalInfo.Any())
             {
                 var rentalInfo = new RentalInfo()
                 {
@@ -40,7 +42,6 @@ namespace Rent
                     Login = "pawel",
                     Email = "pawel@example.com",
                     PhoneNumber = "111222333",
-                    Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
                 };
@@ -52,7 +53,6 @@ namespace Rent
                     Login = "anna",
                     Email = "anna@example.com",
                     PhoneNumber = "444555666",
-                    Role = "user",
                     RentalInfo = rentalInfo,
                     Orders = new List<Order>()
                 };
@@ -93,36 +93,50 @@ namespace Rent
                 rentalInfo.Workers.Add(worker1);
                 rentalInfo.Workers.Add(worker2);
 
-                var eq1 = new Equipment()
+                // Generate items
+                void AddItems(EquipmentType type, Size size, decimal price, int count = 5)
                 {
-                    Size = "M",
-                    Is_In_Werehouse = true,
-                    Price = 100m,
-                };
+                    for (int i = 0; i < count; i++)
+                    {
+                        rentalInfo.Equipment.Add(new Equipment
+                        {
+                            Type = type,
+                            Size = size,
+                            Is_In_Werehouse = true,
+                            Is_Reserved = false,
+                            Price = price,
+                            RentalInfo = rentalInfo
+                        });
+                    }
+                }
 
-                var eq2 = new Equipment()
-                {
-                    Size = "L",
-                    Is_In_Werehouse = true,
-                    Price = 150m,
-                };
+                AddItems(EquipmentType.Skis, Size.Small, 120m);
+                AddItems(EquipmentType.Skis, Size.Medium, 130m);
+                AddItems(EquipmentType.Skis, Size.Large, 140m);
+                AddItems(EquipmentType.Helmet, Size.Universal, 35m);
+                AddItems(EquipmentType.Gloves, Size.Small, 15m);
+                AddItems(EquipmentType.Gloves, Size.Medium, 15m);
+                AddItems(EquipmentType.Gloves, Size.Large, 15m);
+                AddItems(EquipmentType.Poles, Size.Medium, 22m);
+                AddItems(EquipmentType.Snowboard, Size.Medium, 160m);
+                AddItems(EquipmentType.Goggles, Size.Universal, 55m);
 
-                rentalInfo.Equipment.Add(eq1);
-                rentalInfo.Equipment.Add(eq2);
+                // Pierwszy zapis: RentalInfo + Users + Workers + Equipment
+                dataContext.RentalInfo.Add(rentalInfo);
+                dataContext.SaveChanges();
 
+                // Dodaj przykładowe zamówienie po zapisaniu bazowych danych
                 var order1 = new Order()
                 {
-                    Rented_Items = "Equipment1",
-                    OrderDate = DateTime.Now,
-                    Price = 100m,
-                    Date_Of_submission = DateOnly.FromDateTime(DateTime.Now),
+                    Rented_Items = "Skis Small",
+                    OrderDate = DateTime.UtcNow,
+                    Price = 120m,
+                    Date_Of_submission = DateOnly.FromDateTime(DateTime.UtcNow),
                     Was_It_Returned = false,
+                    User = user1,
+                    RentalInfo = rentalInfo
                 };
-
-                rentalInfo.Orders.Add(order1);
-                user1.Orders.Add(order1);
-
-                dataContext.RentalInfo.Add(rentalInfo);
+                dataContext.Orders.Add(order1);
                 dataContext.SaveChanges();
             }
         }

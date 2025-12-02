@@ -43,7 +43,6 @@ namespace Rent.Controllers
                 return BadRequest(new { Errors = errors });
             }
 
-            // upewnij się, że rola 'User' istnieje
             const string roleName = "User";
             if (!await _roleManager.RoleExistsAsync(roleName))
             {
@@ -62,7 +61,12 @@ namespace Rent.Controllers
                 return BadRequest(new { Errors = errors, Message = "Nie udało się przypisać roli 'User'." });
             }
 
-            return Ok(new { Message = "User registered successfully", UserId = user.Id });
+            return Ok(new
+            {
+                Message = "User registered successfully",
+                UserId = user.Id,
+                Roles = await _userManager.GetRolesAsync(user)
+            });
         }
     }
 }

@@ -1,66 +1,59 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Logowanie</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body {
-            font-family: Arial,sans-serif;
-            margin: 2rem;
-        }
-
-        form {
-            max-width: 400px;
-            border: 1px solid #ddd;
-            padding: 1rem;
-        }
-
-        label {
-            display: block;
-            margin-top: .5rem;
-        }
-
-        input {
-            width: 100%;
-            padding: .5rem;
-            margin-top: .25rem;
-        }
-
-        button {
-            margin-top: 1rem;
-            padding: .5rem 1rem;
-        }
-
-        .msg {
-            margin-top: .5rem;
-            white-space: pre-wrap;
-        }
-
-        .success {
-            color: green;
-        }
-
-        .error {
-            color: red;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/site.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Logowanie</h1>
-    <form id="loginForm">
-        <label>
-            Login
-            <input type="text" name="UserName" required>
-        </label>
-        <label>
-            Has�o
-            <input type="password" name="Password" required>
-        </label>
-        <button type="submit">Zaloguj</button>
-        <div id="loginMsg" class="msg"></div>
-    </form>
 
+<body>
+    <div class="buttons-top-right">
+        <button class="winter-button" type="button" onclick="location.href='Index.html'">❆ Menu</button>
+        <button class="winter-button" type="button" onclick="location.href='Equipment.html'">⛷️ Sprzęt</button>
+        <details class="user-panel disabled">
+            <summary class="winter-button" aria-label="Panel użytkownika">👤 Panel użytkownika</summary>
+            <div class="user-panel-menu">
+                <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Historia
+                    zamówień</button>
+                <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane
+                    użytkownika</button>
+                <button class="winter-button" type="button" onclick="location.href='WorkerPanel.html'"
+                    data-required-roles="worker, admin">Panel pracownika</button>
+                <button class="winter-button" type="button" onclick="location.href='AdminPanel.html'"
+                    data-required-roles="admin">Panel administratora</button>
+                <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">Wyloguj</button>
+            </div>
+        </details>
+        <button class="winter-button" type="button" onclick="location.href='Kontakt.html'">📞 Kontakt</button>
+        <button class="winter-button" type="button" data-nav="Basket.html">🛒 Koszyk</button>
+        <button class="winter-button" type="button" onclick="location.href='Register.html'"
+            data-hide-when-auth="true">📝 Rejestracja</button>
+    </div>
+    <div class="content-section">
+        <div class="frost-effect">
+            <h1 class="winter-title">Logowanie</h1>
+            <form id="loginForm" class="form-box" novalidate>
+                <div class="mb-3">
+                    <label>
+                        Email
+                        <input type="text" name="Email" required />
+                    </label>
+                </div>
+                <div class="mb-3">
+                    <label>Hasło
+                        <input type="password" name="Password" required />
+                    </label>
+                </div>
+                <button type="submit" class="submit-btn">Zaloguj</button>
+                <div id="loginMsg" class="msg"></div>
+                <div class="alt-link" data-hide-when-auth="true">Nie masz konta? <a href="Register.html">Zarejestruj
+                    się</a></div>
+            </form>
+        </div>
+    </div>
     <script>
         const form = document.getElementById('loginForm');
         const msg = document.getElementById('loginMsg');
@@ -70,28 +63,33 @@
             msg.className = 'msg';
             msg.textContent = 'Logowanie...';
 
-            const data = Object.fromEntries(new FormData(form)); // { UserName, Password }
+            const data = Object.fromEntries(new FormData(form));
 
             try {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
-                    credentials: 'include' // potrzebne je�li u�ywasz cookie auth
+                    credentials: 'include'
                 });
 
-                if (!res.ok) {
-                    const errText = await res.text();
-                    throw new Error(errText);
-                }
+                let text = await res.text();
+                try {
+                    text = JSON.parse(text);
+                } catch { }
+
+                if (!res.ok) throw (typeof text === 'string' ? new Error(text) : new Error(JSON.stringify(text)));
 
                 msg.className = 'msg success';
-                msg.textContent = 'Logowanie pomy�lne';
+                msg.textContent = 'Logowanie pomyślne';
+                window.location.href = 'Index.html';
             } catch (err) {
                 msg.className = 'msg error';
-                msg.textContent = 'B��d: ' + err.message;
+                msg.textContent = 'Błąd: ' + err.message;
             }
         });
     </script>
+    <script src="/js/site.js"></script>
 </body>
+
 </html>
