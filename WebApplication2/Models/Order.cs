@@ -11,7 +11,7 @@ namespace Rent.Models
 
         [Required]
         [MaxLength(255)]
-        public string Rented_Items { get; set; }
+        public string Rented_Items { get; set; } = string.Empty;
 
         public DateTime OrderDate { get; set; }
 
@@ -29,7 +29,7 @@ namespace Rent.Models
         [Required]
         public bool Was_It_Returned { get; set; }
 
-        public ICollection<OrderedItem> OrderedItems { get; set; } = new List<OrderedItem>();
+        public ICollectionOrderedItem> OrderedItems { get; set; } = new List<OrderedItem>();
 
         public User? User { get; set; }
 

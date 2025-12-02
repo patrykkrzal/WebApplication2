@@ -49,7 +49,7 @@ namespace Rent.Controllers
  var user = await _userManager.FindByIdAsync(userId); if (user == null) return Unauthorized();
  var stockCheck = await ValidateStockAsync(dto.ItemsDetail); if (!stockCheck.ok) { /* logi wy³¹czone */ return BadRequest(stockCheck.message); }
  using var conn = new SqlConnection(_cfg.GetConnectionString("DefaultConnection")); await conn.OpenAsync();
- var rentedItems = (dto.Items?.Length ??0) >0 ? string.Join(", ", dto.Items) : "Basket";
+ var rentedItems = (dto.Items?.Length ??0) >0 ? string.Join(", ", dto.Items ?? Array.Empty<string>()) : "Basket";
  using (var cmd = new SqlCommand("dbo.spCreateOrder", conn) { CommandType = System.Data.CommandType.StoredProcedure })
  { cmd.Parameters.Add(new SqlParameter("@userId", System.Data.SqlDbType.NVarChar,450) { Value = userId }); cmd.Parameters.Add(new SqlParameter("@rentedItems", System.Data.SqlDbType.NVarChar,255) { Value = rentedItems }); cmd.Parameters.Add(new SqlParameter("@basePrice", System.Data.SqlDbType.Decimal) { Precision =18, Scale =2, Value = dto.BasePrice }); cmd.Parameters.Add(new SqlParameter("@itemsCount", System.Data.SqlDbType.Int) { Value = dto.ItemsCount }); cmd.Parameters.Add(new SqlParameter("@days", System.Data.SqlDbType.Int) { Value = dto.Days }); await cmd.ExecuteNonQueryAsync(); }
  var order = await _db.Orders.Where(o => o.User != null && o.User.Id == userId).OrderByDescending(o => o.Id).FirstOrDefaultAsync(); if (order == null) { /* logi wy³¹czone */ return StatusCode(500, "Nie mo¿na utworzyæ zamówienia."); }

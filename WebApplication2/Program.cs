@@ -127,9 +127,13 @@ public class Program
             string? sqlPath = sqlPathCandidates.FirstOrDefault(File.Exists);
             if (sqlPath != null)
             {
-                var script = await File.ReadAllTextAsync(sqlPath);
-                await ExecuteSqlScriptBatchedAsync(builder.Configuration.GetConnectionString("DefaultConnection"), script);
-                Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                if (!string.IsNullOrWhiteSpace(sqlPath) && !string.IsNullOrWhiteSpace(connectionString))
+                {
+                    var script = await File.ReadAllTextAsync(sqlPath);
+                    await ExecuteSqlScriptBatchedAsync(connectionString, script);
+                    Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                }
             }
 
             var seeder = scope.ServiceProvider.GetRequiredService<Seed>();
