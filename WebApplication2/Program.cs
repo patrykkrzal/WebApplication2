@@ -21,6 +21,13 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // DemoMode from config or env
+        static bool GetBool(string? v)
+            => !string.IsNullOrWhiteSpace(v) && (v.Equals("1") || v.Equals("true", StringComparison.OrdinalIgnoreCase) || v.Equals("yes", StringComparison.OrdinalIgnoreCase));
+        var demoFromCfg = builder.Configuration["DemoMode"];
+        var demoFromEnv = Environment.GetEnvironmentVariable("DEMO_MODE");
+        var demoMode = GetBool(demoFromEnv) || GetBool(demoFromCfg);
+
         // -------------------------------
         // CONNECTION STRING OVERRIDES
         // -------------------------------
@@ -39,11 +46,33 @@ public class Program
             builder.Configuration["ConnectionStrings:DefaultConnection"] = rentDbEnv;
             Console.WriteLine("Using RENT_DB from environment.");
         }
+        else
+        {
+            // If LocalDB and a fixed Initial Catalog are used, create per-user DB to avoid cross-account conflicts
+            var currentCs = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (!string.IsNullOrWhiteSpace(currentCs) && currentCs.Contains("(localdb)\\MSSQLLocalDB", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var b = new SqlConnectionStringBuilder(currentCs);
+                    var baseName = string.IsNullOrWhiteSpace(b.InitialCatalog) ? "RentDb" : b.InitialCatalog;
+                    var uname = Environment.UserName ?? "User";
+                    var sanitized = new string(uname.Where(char.IsLetterOrDigit).ToArray());
+                    if (string.IsNullOrWhiteSpace(sanitized)) sanitized = "User";
+                    var perUser = baseName + "_" + sanitized;
+                    b.InitialCatalog = perUser;
+                    builder.Configuration["ConnectionStrings:DefaultConnection"] = b.ToString();
+                    Console.WriteLine($"Using per-user LocalDB database: {perUser}");
+                }
+                catch { /* ignore and keep original */ }
+            }
+        }
 
         // -------------------------------
         // LOGOWANIE CONNECTION STRING
         // -------------------------------
         Console.WriteLine("Connection string: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+        Console.WriteLine("DemoMode: " + demoMode);
 
         // -------------------------------
         // DODAWANIE SERWISÓW
@@ -119,12 +148,14 @@ public class Program
         // -------------------------------
         //  MIGRACJE DB (AUTO) + DDL skrypty
         // -------------------------------
+        bool migrated = false;
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<DataContext>();
             try
             {
                 context.Database.Migrate();
+                migrated = true;
                 Console.WriteLine("Database migrated.");
             }
             catch (Exception ex)
@@ -132,36 +163,33 @@ public class Program
                 Console.WriteLine("Database migrate failed: " + ex.Message);
             }
 
-            // Execute DatabaseObjects.sql to create functions/procedures required by controllers
             try
             {
-                var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-                var basePath = AppContext.BaseDirectory;
-                // Try to locate file relative to content root
-                var contentRoot = builder.Environment.ContentRootPath;
-                var sqlPathCandidates = new[]
+                if (migrated)
                 {
-                    Path.Combine(contentRoot, "WebApplication2", "DatabaseObjects.sql"),
-                    Path.Combine(contentRoot, "DatabaseObjects.sql"),
-                    Path.Combine(basePath, "DatabaseObjects.sql")
-                };
-                string? sqlPath = sqlPathCandidates.FirstOrDefault(File.Exists);
-                if (sqlPath != null)
-                {
-                    if (string.IsNullOrWhiteSpace(cs))
+                    var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+                    var basePath = AppContext.BaseDirectory;
+                    var contentRoot = builder.Environment.ContentRootPath;
+                    var sqlPathCandidates = new[]
                     {
-                        Console.WriteLine("Connection string is null/empty; skipping DatabaseObjects.sql execution.");
+                        Path.Combine(contentRoot, "WebApplication2", "DatabaseObjects.sql"),
+                        Path.Combine(contentRoot, "DatabaseObjects.sql"),
+                        Path.Combine(basePath, "DatabaseObjects.sql")
+                    };
+                    string? sqlPath = sqlPathCandidates.FirstOrDefault(File.Exists);
+                    if (sqlPath != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(cs))
+                        {
+                            var script = await File.ReadAllTextAsync(sqlPath);
+                            await ExecuteSqlScriptBatchedAsync(cs, script);
+                            Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                        }
                     }
                     else
                     {
-                        var script = await File.ReadAllTextAsync(sqlPath);
-                        await ExecuteSqlScriptBatchedAsync(cs, script);
-                        Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                        Console.WriteLine("DatabaseObjects.sql not found; skipping SP/func initialization.");
                     }
-                }
-                else
-                {
-                    Console.WriteLine("DatabaseObjects.sql not found; skipping SP/func initialization.");
                 }
             }
             catch (Exception ex)
@@ -169,14 +197,17 @@ public class Program
                 Console.WriteLine("Executing DatabaseObjects.sql failed: " + ex.Message);
             }
 
-            // Seed po migracji (jeœli pusty RentalInfo)
-            var seeder = scope.ServiceProvider.GetRequiredService<Seed>();
-            seeder.SeedDataContext();
+            if (migrated)
+            {
+                var seeder = scope.ServiceProvider.GetRequiredService<Seed>();
+                seeder.SeedDataContext();
+            }
         }
 
         // -------------------------------
-        //  AUTOMATYCZNE TWORZENIE RÓL
+        // AUTOMATYCZNE TWORZENIE RÓL + DEMO USER
         // -------------------------------
+        string? demoUserId = null;
         using (var scope = app.Services.CreateScope())
         {
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -192,7 +223,6 @@ public class Program
         }
         using (var scope = app.Services.CreateScope())
         {
-            // U¿ywaj UserManager<User>, bo tak skonfigurowano Identity
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
             string email = "admin@admin.com";
             string password = "Test1234,";
@@ -216,6 +246,27 @@ public class Program
                 {
                     Console.WriteLine("Admin create failed: " + string.Join(", ", createResult.Errors.Select(e => e.Description)));
                 }
+            }
+
+            if (demoMode)
+            {
+                var demoEmail = "demo@demo.local";
+                var demo = await userManager.FindByEmailAsync(demoEmail);
+                if (demo == null)
+                {
+                    demo = new User { UserName = demoEmail, Email = demoEmail, First_name = "Demo", Last_name = "User" };
+                    var r = await userManager.CreateAsync(demo, "Demo1234,");
+                    if (!r.Succeeded)
+                        Console.WriteLine("Demo user create failed: " + string.Join(", ", r.Errors.Select(e => e.Description)));
+                }
+                // Ensure roles for demo user
+                var demoRoles = await userManager.GetRolesAsync(demo);
+                string[] want = new[] { "Admin", "Worker", "User" };
+                foreach (var rr in want)
+                    if (!demoRoles.Contains(rr)) await userManager.AddToRoleAsync(demo, rr);
+
+                demoUserId = demo.Id;
+                Console.WriteLine($"Demo user ready: {demoEmail} ({demoUserId})");
             }
         }
 
@@ -253,6 +304,30 @@ public class Program
         app.UseStaticFiles();
 
         app.UseAuthentication();
+
+        // Demo auto-auth: jeœli brak logowania, podstaw u¿ytkownika demo
+        if (demoMode && !string.IsNullOrEmpty(demoUserId))
+        {
+            app.Use(async (ctx, next) =>
+            {
+                if (!(ctx.User?.Identity?.IsAuthenticated ?? false))
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, demoUserId!),
+                        new Claim(ClaimTypes.Name, "demo"),
+                        new Claim(ClaimTypes.Email, "demo@demo.local"),
+                        new Claim(ClaimTypes.Role, "Admin"),
+                        new Claim(ClaimTypes.Role, "Worker"),
+                        new Claim(ClaimTypes.Role, "User"),
+                    };
+                    var id = new ClaimsIdentity(claims, authenticationType: "Demo");
+                    ctx.User = new ClaimsPrincipal(id);
+                }
+                await next();
+            });
+        }
+
         app.UseAuthorization();
 
         // -------------------------------
