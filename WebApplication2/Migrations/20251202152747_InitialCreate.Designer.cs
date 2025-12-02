@@ -12,8 +12,8 @@ using Rent.Data;
 namespace Rent.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251201214635_init")]
-    partial class init
+    [Migration("20251202152747_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -194,39 +194,6 @@ namespace Rent.Migrations
                     b.HasIndex("WarehouseId");
 
                     b.ToTable("Equipment");
-                });
-
-            modelBuilder.Entity("Rent.Models.LogEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Exception")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Scope")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Logs", (string)null);
                 });
 
             modelBuilder.Entity("Rent.Models.Order", b =>
