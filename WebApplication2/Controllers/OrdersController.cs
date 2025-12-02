@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Rent.Data;
 using Rent.Models;
 using System.Security.Claims;
-using Rent.Enums; // parse Type/Size for stock validation
+using Rent.Enums;
 
 namespace Rent.Controllers
 {
@@ -53,6 +53,8 @@ namespace Rent.Controllers
  using (var cmd = new SqlCommand("dbo.spCreateOrder", conn) { CommandType = System.Data.CommandType.StoredProcedure })
  { cmd.Parameters.Add(new SqlParameter("@userId", System.Data.SqlDbType.NVarChar,450) { Value = userId }); cmd.Parameters.Add(new SqlParameter("@rentedItems", System.Data.SqlDbType.NVarChar,255) { Value = rentedItems }); cmd.Parameters.Add(new SqlParameter("@basePrice", System.Data.SqlDbType.Decimal) { Precision =18, Scale =2, Value = dto.BasePrice }); cmd.Parameters.Add(new SqlParameter("@itemsCount", System.Data.SqlDbType.Int) { Value = dto.ItemsCount }); cmd.Parameters.Add(new SqlParameter("@days", System.Data.SqlDbType.Int) { Value = dto.Days }); await cmd.ExecuteNonQueryAsync(); }
  var order = await _db.Orders.Where(o => o.User != null && o.User.Id == userId).OrderByDescending(o => o.Id).FirstOrDefaultAsync(); if (order == null) { /* logi wy³¹czone */ return StatusCode(500, "Nie mo¿na utworzyæ zamówienia."); }
+ // utrwal Days je¿eli procedura nie przypisa³a
+ if ((order.Days ??0) <=0) { order.Days = dto.Days; }
  foreach (var d in dto.ItemsDetail ?? new())
  {
  if (d.Quantity <=0) continue; if (!TryParseEnum<EquipmentType>(d.Type, out var type) || !TryParseEnum<Size>(d.Size, out var size)) continue;
@@ -67,7 +69,7 @@ namespace Rent.Controllers
  await _db.SaveChangesAsync();
  using var calc = new SqlCommand("dbo.spCalculateOrderPrice", conn) { CommandType = System.Data.CommandType.StoredProcedure }; calc.Parameters.Add(new SqlParameter("@basePrice", System.Data.SqlDbType.Decimal) { Precision =18, Scale =2, Value = dto.BasePrice }); calc.Parameters.Add(new SqlParameter("@itemsCount", System.Data.SqlDbType.Int) { Value = dto.ItemsCount }); calc.Parameters.Add(new SqlParameter("@days", System.Data.SqlDbType.Int) { Value = dto.Days }); var finalParam = new SqlParameter("@finalPrice", System.Data.SqlDbType.Decimal) { Precision =18, Scale =2, Direction = System.Data.ParameterDirection.Output }; var pctParam = new SqlParameter("@discountPct", System.Data.SqlDbType.Decimal) { Precision =5, Scale =2, Direction = System.Data.ParameterDirection.Output }; calc.Parameters.Add(finalParam); calc.Parameters.Add(pctParam); await calc.ExecuteNonQueryAsync(); var final = (finalParam.Value == DBNull.Value) ?0m : (decimal)finalParam.Value; var pct = (pctParam.Value == DBNull.Value) ?0m : (decimal)pctParam.Value;
  /* logi wy³¹czone */
- return Ok(new { Message = "Order created", Price = final, Days = dto.Days, DiscountPct = pct });
+ return Ok(new { Message = "Order created", Price = final, Days = dto.Days, DiscountPct = pct, DueDate = order.OrderDate.AddDays(order.Days ??0) });
  }catch(Exception ex){ _logger.LogError(ex, "Create order failed"); /* logi wy³¹czone */ return StatusCode(500, "B³¹d tworzenia zamówienia"); }
  }
 
@@ -88,6 +90,8 @@ namespace Rent.Controllers
  var filtered = list.Where(o => !o.Was_It_Returned && o.OrderedItems.Any() && o.OrderedItems.All(oi => oi.Equipment != null && oi.Equipment.Is_Reserved && oi.Equipment.Is_In_Werehouse)).ToList();
  var result = filtered.Select(o => new{
  o.Id, o.OrderDate, o.Price,
+ DueDate = o.OrderDate.AddDays(o.Days ??0),
+ Days = o.Days,
  User = o.User == null ? null : new { o.User.First_name, o.User.Last_name, o.User.Email },
  Items = o.OrderedItems.Select(oi => new{ oi.EquipmentId, Type = oi.Equipment.Type.ToString(), Size = oi.Equipment.Size.ToString(), oi.Quantity, oi.PriceWhenOrdered, oi.Equipment.Is_Reserved, oi.Equipment.Is_In_Werehouse })
  });
@@ -107,6 +111,8 @@ namespace Rent.Controllers
  var filtered = list.Where(o => !o.Was_It_Returned && o.OrderedItems.Any(oi => oi.Equipment != null && !oi.Equipment.Is_In_Werehouse)).ToList();
  var result = filtered.Select(o => new{
  o.Id, o.OrderDate, o.Price,
+ DueDate = o.OrderDate.AddDays(o.Days ??0),
+ Days = o.Days,
  User = o.User == null ? null : new { o.User.First_name, o.User.Last_name, o.User.Email },
  Items = o.OrderedItems.Select(oi => new{ oi.EquipmentId, Type = oi.Equipment.Type.ToString(), Size = oi.Equipment.Size.ToString(), oi.Quantity, oi.PriceWhenOrdered, oi.Equipment.Is_Reserved, oi.Equipment.Is_In_Werehouse })
  });
@@ -119,8 +125,10 @@ namespace Rent.Controllers
  {
  int affected = await _db.Database.ExecuteSqlRawAsync(
  "UPDATE e SET e.Is_In_Werehouse =0, e.Is_Reserved =1 FROM Equipment e INNER JOIN OrderedItems oi ON oi.EquipmentId = e.Id WHERE oi.OrderId = {0}", orderId);
- await _db.SaveChangesAsync();
- return Ok(new { Message = "Order accepted", Updated = affected });
+ // nie modyfikuj OrderDate – zostaw jak wczeœniej
+ var order = await _db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
+ var due = (order != null) ? order.OrderDate.AddDays(order.Days ??0) : (DateTime?)null;
+ return Ok(new { Message = "Order accepted", Updated = affected, DueDate = due });
  }
 
  // DELETE: cancel/reject an order and release reserved equipment
@@ -180,10 +188,12 @@ namespace Rent.Controllers
  var grouped = o.OrderedItems.Where(oi => oi.Equipment != null)
  .GroupBy(oi => new { oi.Equipment.Type, oi.Equipment.Size })
  .Select(g => new { Type = g.Key.Type.ToString(), Size = g.Key.Size.ToString(), Count = g.Count(), UnitPrice = g.First().PriceWhenOrdered });
+ var dueDate = (o.Days ??0) >0 ? o.OrderDate.AddDays(o.Days!.Value) : (DateTime?)null; // zawsze jeœli mamy dni
  return new {
  o.Id,
  o.Price,
  o.OrderDate,
+ DueDate = dueDate,
  o.Was_It_Returned,
  Status = status,
  Rented_Items = o.Rented_Items,
@@ -197,8 +207,120 @@ namespace Rent.Controllers
  Is_In_Werehouse = oi.Equipment?.Is_In_Werehouse,
  Is_Reserved = oi.Equipment?.Is_Reserved
  })
- }; });
+ };
+ });
  return Ok(shaped);
+ }
+
+ [Authorize(Roles="Admin,Worker")]
+ [HttpGet("all")] // pe³ny raport wszystkich zamówieñ
+ public async Task<IActionResult> GetAll()
+ {
+ var list = await _db.Orders
+ .AsNoTracking()
+ .Include(o => o.OrderedItems).ThenInclude(oi => oi.Equipment)
+ .Include(o => o.User)
+ .OrderByDescending(o => o.OrderDate)
+ .ToListAsync();
+ var shaped = list.Select(o => new {
+ o.Id,
+ o.Price,
+ o.OrderDate,
+ DueDate = (o.Days ??0) >0 ? o.OrderDate.AddDays(o.Days!.Value) : (DateTime?)null,
+ o.Was_It_Returned,
+ Status = o.Was_It_Returned ? "Zakoñczona realizacja" : (o.OrderedItems.Any(oi => oi.Equipment != null && !oi.Equipment.Is_In_Werehouse && oi.Equipment.Is_Reserved) ? "Do oddania" : "W trakcie realizacji"),
+ Rented_Items = o.Rented_Items,
+ User = o.User == null ? null : new { o.User.First_name, o.User.Last_name, o.User.Email },
+ ItemsGrouped = o.OrderedItems.Where(oi => oi.Equipment != null).GroupBy(oi => new { oi.Equipment.Type, oi.Equipment.Size }).Select(g => new { Type = g.Key.Type.ToString(), Size = g.Key.Size.ToString(), Count = g.Count(), UnitPrice = g.First().PriceWhenOrdered }),
+ Items = o.OrderedItems.Select(oi => new { oi.EquipmentId, Type = oi.Equipment?.Type.ToString(), Size = oi.Equipment?.Size.ToString(), oi.Quantity, oi.PriceWhenOrdered, Is_In_Werehouse = oi.Equipment?.Is_In_Werehouse, Is_Reserved = oi.Equipment?.Is_Reserved })
+ });
+ return Ok(shaped);
+ }
+
+ [Authorize(Roles="Admin,Worker")]
+ [HttpGet("by-email")] // raport zamówieñ dla podanego emaila (case-insensitive)
+ public async Task<IActionResult> GetByEmail([FromQuery] string email)
+ {
+ if(string.IsNullOrWhiteSpace(email)) return BadRequest("Email wymagalny");
+ var e = email.Trim().ToLower();
+ var list = await _db.Orders
+ .AsNoTracking()
+ .Include(o => o.OrderedItems).ThenInclude(oi => oi.Equipment)
+ .Include(o => o.User)
+ .Where(o => o.User != null && (
+ (o.User.Email != null && o.User.Email.ToLower() == e) ||
+ (o.User.UserName != null && o.User.UserName.ToLower() == e) ||
+ (o.User.NormalizedEmail != null && o.User.NormalizedEmail.ToLower() == e)
+ ))
+ .OrderByDescending(o => o.OrderDate)
+ .ToListAsync();
+ var shaped = list.Select(o => new {
+ o.Id,
+ o.Price,
+ o.OrderDate,
+ DueDate = (o.Days ??0) >0 ? o.OrderDate.AddDays(o.Days!.Value) : (DateTime?)null,
+ o.Was_It_Returned,
+ Status = o.Was_It_Returned ? "Zakoñczona realizacja" : (o.OrderedItems.Any(oi => oi.Equipment != null && !oi.Equipment.Is_In_Werehouse && oi.Equipment.Is_Reserved) ? "Do oddania" : "W trakcie realizacji"),
+ Rented_Items = o.Rented_Items,
+ User = o.User == null ? null : new { o.User.First_name, o.User.Last_name, o.User.Email },
+ ItemsGrouped = o.OrderedItems.Where(oi => oi.Equipment != null).GroupBy(oi => new { oi.Equipment.Type, oi.Equipment.Size }).Select(g => new { Type = g.Key.Type.ToString(), Size = g.Key.Size.ToString(), Count = g.Count(), UnitPrice = g.First().PriceWhenOrdered }),
+ Items = o.OrderedItems.Select(oi => new { oi.EquipmentId, Type = oi.Equipment?.Type.ToString(), Size = oi.Equipment?.Size.ToString(), oi.Quantity, oi.PriceWhenOrdered, Is_In_Werehouse = oi.Equipment?.Is_In_Werehouse, Is_Reserved = oi.Equipment?.Is_Reserved })
+ });
+ return Ok(shaped);
+ }
+
+ [Authorize(Roles="Admin,Worker")]
+ [HttpGet("by-id/{orderId:int}")] // raport pojedynczego zamówienia po numerze (segment)
+ public async Task<IActionResult> GetById(int orderId)
+ {
+ var o = await _db.Orders
+ .AsNoTracking()
+ .Include(x => x.OrderedItems).ThenInclude(oi => oi.Equipment)
+ .Include(x => x.User)
+ .FirstOrDefaultAsync(x => x.Id == orderId);
+ if (o == null) return NotFound("Brak zamówienia o podanym numerze.");
+ var anyOutWhReserved = o.OrderedItems.Any(oi => oi.Equipment != null && !oi.Equipment.Is_In_Werehouse && oi.Equipment.Is_Reserved);
+ string status = o.Was_It_Returned ? "Zakoñczona realizacja" : (anyOutWhReserved ? "Do oddania" : "W trakcie realizacji");
+ var shaped = new {
+ o.Id,
+ o.Price,
+ o.OrderDate,
+ DueDate = (o.Days ??0) >0 ? o.OrderDate.AddDays(o.Days!.Value) : (DateTime?)null,
+ o.Was_It_Returned,
+ Status = status,
+ Rented_Items = o.Rented_Items,
+ User = o.User == null ? null : new { o.User.First_name, o.User.Last_name, o.User.Email },
+ ItemsGrouped = o.OrderedItems.Where(oi => oi.Equipment != null).GroupBy(oi => new { oi.Equipment.Type, oi.Equipment.Size }).Select(g => new { Type = g.Key.Type.ToString(), Size = g.Key.Size.ToString(), Count = g.Count(), UnitPrice = g.First().PriceWhenOrdered }),
+ Items = o.OrderedItems.Select(oi => new { oi.EquipmentId, Type = oi.Equipment?.Type.ToString(), Size = oi.Equipment?.Size.ToString(), oi.Quantity, oi.PriceWhenOrdered, Is_In_Werehouse = oi.Equipment?.Is_In_Werehouse, Is_Reserved = oi.Equipment?.Is_Reserved })
+ };
+ return Ok(shaped);
+ }
+
+ [Authorize(Roles="Admin,Worker")]
+ [HttpGet("report")] // bezpieczna alternatywna trasa dla raportu po numerze (?id=123)
+ public async Task<IActionResult> Report([FromQuery] int id)
+ {
+ if(id <=0) return BadRequest("Nieprawid³owy numer zamówienia.");
+ var o = await _db.Orders
+ .AsNoTracking()
+ .Include(x => x.OrderedItems).ThenInclude(oi => oi.Equipment)
+ .Include(x => x.User)
+ .FirstOrDefaultAsync(x => x.Id == id);
+ if (o == null) return NotFound("Brak zamówienia o podanym numerze.");
+ var anyOutWhReserved = o.OrderedItems.Any(oi => oi.Equipment != null && !oi.Equipment.Is_In_Werehouse && oi.Equipment.Is_Reserved);
+ string status = o.Was_It_Returned ? "Zakoñczona realizacja" : (anyOutWhReserved ? "Do oddania" : "W trakcie realizacji");
+ return Ok(new {
+ o.Id,
+ o.Price,
+ o.OrderDate,
+ DueDate = (o.Days ??0) >0 ? o.OrderDate.AddDays(o.Days!.Value) : (System.DateTime?)null,
+ o.Was_It_Returned,
+ Status = status,
+ Rented_Items = o.Rented_Items,
+ User = o.User == null ? null : new { o.User.First_name, o.User.Last_name, o.User.Email },
+ ItemsGrouped = o.OrderedItems.Where(oi => oi.Equipment != null).GroupBy(oi => new { oi.Equipment.Type, oi.Equipment.Size }).Select(g => new { Type = g.Key.Type.ToString(), Size = g.Key.Size.ToString(), Count = g.Count(), UnitPrice = g.First().PriceWhenOrdered }),
+ Items = o.OrderedItems.Select(oi => new { oi.EquipmentId, Type = oi.Equipment?.Type.ToString(), Size = oi.Equipment?.Size.ToString(), oi.Quantity, oi.PriceWhenOrdered, Is_In_Werehouse = oi.Equipment?.Is_In_Werehouse, Is_Reserved = oi.Equipment?.Is_Reserved })
+ });
  }
  }
 }

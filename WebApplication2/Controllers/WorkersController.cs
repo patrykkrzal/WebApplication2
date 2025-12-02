@@ -44,10 +44,19 @@ namespace Rent.Controllers
 
             await _userManager.AddToRoleAsync(user, "Worker");
 
-            // Walidacja istnienia RentalInfo
-            bool rentalExists = await _db.RentalInfo.AnyAsync(r => r.Id == dto.RentalInfoId);
-            if (!rentalExists)
-                return BadRequest(new { Message = $"RentalInfo o Id={dto.RentalInfoId} nie istnieje." });
+            // Resolve RentalInfoId automatically: if provided id doesn't exist (or is0),
+            // fallback to the first existing RentalInfo id.
+            int resolvedRentalInfoId = dto.RentalInfoId;
+            bool exists = resolvedRentalInfoId > 0 && await _db.RentalInfo.AnyAsync(r => r.Id == resolvedRentalInfoId);
+            if (!exists)
+            {
+                var first = await _db.RentalInfo.OrderBy(r => r.Id).Select(r => r.Id).FirstOrDefaultAsync();
+                if (first == 0)
+                {
+                    return BadRequest(new { Message = "Brak dostępnego RentalInfo w bazie danych." });
+                }
+                resolvedRentalInfoId = first;
+            }
 
             var worker = new Worker
             {
@@ -60,13 +69,30 @@ namespace Rent.Controllers
                 WorkEnd = dto.WorkEnd,
                 Working_Days = dto.Working_Days,
                 Job_Title = dto.Job_Title,
-                RentalInfoId = dto.RentalInfoId
+                RentalInfoId = resolvedRentalInfoId
             };
 
             _db.Workers.Add(worker);
             await _db.SaveChangesAsync();
 
-            return Ok(new { Message = "Worker created successfully", UserId = user.Id, WorkerId = worker.Id });
+            return Ok(new { Message = "Worker created successfully", UserId = user.Id, WorkerId = worker.Id, RentalInfoId = resolvedRentalInfoId });
+        }
+
+        // DELETE worker & linked user by email
+        [HttpDelete("{email}")]
+        public async Task<IActionResult> DeleteByEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return BadRequest("Email wymagany");
+            var normalized = email.Trim().ToLower();
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == normalized);
+            if (user == null) return NotFound(new { Message = "Nie znaleziono użytkownika." });
+            // remove worker row if exists
+            var worker = await _db.Workers.FirstOrDefaultAsync(w => w.Email != null && w.Email.ToLower() == normalized);
+            if (worker != null) { _db.Workers.Remove(worker); }
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded) return StatusCode(500, new { Message = "Nie udało się usunąć użytkownika", Errors = result.Errors.Select(e => e.Description) });
+            await _db.SaveChangesAsync();
+            return Ok(new { Message = "Usunięto użytkownika/pracownika", Email = email });
         }
     }
 }

@@ -16,21 +16,32 @@
         <details class="user-panel disabled">
             <summary class="winter-button" aria-label="Panel użytkownika">👤 Panel użytkownika</summary>
             <div class="user-panel-menu">
-                <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">Historia
-                    zamówień</button>
-                <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">Dane
-                    użytkownika</button>
+                <button class="winter-button" type="button" data-nav="OrderHistory.html" data-show-when-auth="true">
+                    Historia
+                    zamówień
+                </button>
+                <button class="winter-button" type="button" data-nav="UserData.html" data-show-when-auth="true">
+                    Dane
+                    użytkownika
+                </button>
                 <button class="winter-button" type="button" onclick="location.href='WorkerPanel.html'"
-                    data-required-roles="worker, admin">Panel pracownika</button>
+                        data-required-roles="worker, admin">
+                    Panel pracownika
+                </button>
                 <button class="winter-button" type="button" onclick="location.href='AdminPanel.html'"
-                    data-required-roles="admin">Panel administratora</button>
+                        data-required-roles="admin">
+                    Panel administratora
+                </button>
+                <button class="winter-button" type="button" data-nav="AddOrDeleteItem.html" data-required-roles="worker, admin">Dodaj Sprzęt</button>
                 <button class="winter-button" type="button" data-logout="true" data-show-when-auth="true">Wyloguj</button>
             </div>
         </details>
         <button class="winter-button" type="button" onclick="location.href='Kontakt.html'">📞 Kontakt</button>
         <button class="winter-button" type="button" data-nav="Basket.html">🛒 Koszyk</button>
         <button class="winter-button" type="button" onclick="location.href='Register.html'"
-            data-hide-when-auth="true">📝 Rejestracja</button>
+                data-hide-when-auth="true">
+            📝 Rejestracja
+        </button>
     </div>
     <div class="content-section">
         <div class="frost-effect">
@@ -43,14 +54,19 @@
                     </label>
                 </div>
                 <div class="mb-3">
-                    <label>Hasło
+                    <label>
+                        Hasło
                         <input type="password" name="Password" required />
                     </label>
                 </div>
                 <button type="submit" class="submit-btn">Zaloguj</button>
                 <div id="loginMsg" class="msg"></div>
-                <div class="alt-link" data-hide-when-auth="true">Nie masz konta? <a href="Register.html">Zarejestruj
-                    się</a></div>
+                <div class="alt-link" data-hide-when-auth="true">
+                    Nie masz konta? <a href="Register.html">
+                        Zarejestruj
+                        się
+                    </a>
+                </div>
             </form>
         </div>
     </div>
