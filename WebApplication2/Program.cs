@@ -22,12 +22,31 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // -------------------------------
-        //  LOGOWANIE CONNECTION STRING
+        // CONNECTION STRING OVERRIDES
+        // -------------------------------
+        // Umo¿liwienie zdalnego connection stringa bez zmiany plików:
+        //1) RENT_DB (np. Server=host,1433;Database=RentDb;User Id=...;Password=...;TrustServerCertificate=True)
+        //2) ConnectionStrings__DefaultConnection (standardowy sposób dla ENV)
+        var rentDbEnv = Environment.GetEnvironmentVariable("RENT_DB");
+        var csEnv = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+        if (!string.IsNullOrWhiteSpace(csEnv))
+        {
+            builder.Configuration["ConnectionStrings:DefaultConnection"] = csEnv;
+            Console.WriteLine("Using ConnectionStrings__DefaultConnection from environment.");
+        }
+        else if (!string.IsNullOrWhiteSpace(rentDbEnv))
+        {
+            builder.Configuration["ConnectionStrings:DefaultConnection"] = rentDbEnv;
+            Console.WriteLine("Using RENT_DB from environment.");
+        }
+
+        // -------------------------------
+        // LOGOWANIE CONNECTION STRING
         // -------------------------------
         Console.WriteLine("Connection string: " + builder.Configuration.GetConnectionString("DefaultConnection"));
 
         // -------------------------------
-        //  DODAWANIE SERWISÓW
+        // DODAWANIE SERWISÓW
         // -------------------------------
 
         // Controllers
@@ -299,7 +318,7 @@ public class Program
         }).RequireAuthorization();
 
         // -------------------------------
-        //  START APLIKACJI
+        // START APLIKACJI
         // -------------------------------
         app.Run();
     }
