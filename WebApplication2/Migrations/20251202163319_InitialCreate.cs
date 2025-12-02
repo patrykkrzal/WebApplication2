@@ -44,21 +44,6 @@ namespace Rent.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Warehouse",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Equipment_name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    Sizes = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Warehouse", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -88,7 +73,6 @@ namespace Rent.Migrations
                     Last_name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Login = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     RentalInfoId = table.Column<int>(type: "int", nullable: true),
-                    WarehouseId = table.Column<int>(type: "int", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -112,11 +96,6 @@ namespace Rent.Migrations
                         column: x => x.RentalInfoId,
                         principalTable: "RentalInfo",
                         principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_AspNetUsers_Warehouse_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouse",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -130,8 +109,7 @@ namespace Rent.Migrations
                     Is_In_Werehouse = table.Column<bool>(type: "bit", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Is_Reserved = table.Column<bool>(type: "bit", nullable: false),
-                    RentalInfoId = table.Column<int>(type: "int", nullable: true),
-                    WarehouseId = table.Column<int>(type: "int", nullable: true)
+                    RentalInfoId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -140,11 +118,6 @@ namespace Rent.Migrations
                         name: "FK_Equipment_RentalInfo_RentalInfoId",
                         column: x => x.RentalInfoId,
                         principalTable: "RentalInfo",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Equipment_Warehouse_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouse",
                         principalColumn: "Id");
                 });
 
@@ -164,8 +137,7 @@ namespace Rent.Migrations
                     Working_Days = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     Job_Title = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     Role = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    RentalInfoId = table.Column<int>(type: "int", nullable: false),
-                    WarehouseId = table.Column<int>(type: "int", nullable: true)
+                    RentalInfoId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -176,11 +148,6 @@ namespace Rent.Migrations
                         principalTable: "RentalInfo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Workers_Warehouse_WarehouseId",
-                        column: x => x.WarehouseId,
-                        principalTable: "Warehouse",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -364,11 +331,6 @@ namespace Rent.Migrations
                 column: "RentalInfoId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_WarehouseId",
-                table: "AspNetUsers",
-                column: "WarehouseId");
-
-            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -379,11 +341,6 @@ namespace Rent.Migrations
                 name: "IX_Equipment_RentalInfoId",
                 table: "Equipment",
                 column: "RentalInfoId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Equipment_WarehouseId",
-                table: "Equipment",
-                column: "WarehouseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderedItems_OrderId",
@@ -404,11 +361,6 @@ namespace Rent.Migrations
                 name: "IX_Workers_RentalInfoId",
                 table: "Workers",
                 column: "RentalInfoId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Workers_WarehouseId",
-                table: "Workers",
-                column: "WarehouseId");
         }
 
         /// <inheritdoc />
@@ -449,9 +401,6 @@ namespace Rent.Migrations
 
             migrationBuilder.DropTable(
                 name: "RentalInfo");
-
-            migrationBuilder.DropTable(
-                name: "Warehouse");
         }
     }
 }

@@ -38,8 +38,9 @@ namespace Rent.Models
         public RentalInfo RentalInfo { get; set; } = null;
         public int RentalInfoId { get; set; }
 
-        public Warehouse? Warehouse { get; set; }
-        public int? WarehouseId { get; set; }
+        // Warehouse navigation removed
+        // public Warehouse? Warehouse { get; set; }
+        // public int? WarehouseId { get; set; }
     }
 }
 

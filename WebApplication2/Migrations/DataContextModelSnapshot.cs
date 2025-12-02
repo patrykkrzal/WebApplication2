@@ -181,14 +181,9 @@ namespace Rent.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WarehouseId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("RentalInfoId");
-
-                    b.HasIndex("WarehouseId");
 
                     b.ToTable("Equipment");
                 });
@@ -373,9 +368,6 @@ namespace Rent.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int?>("WarehouseId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
@@ -388,34 +380,7 @@ namespace Rent.Migrations
 
                     b.HasIndex("RentalInfoId");
 
-                    b.HasIndex("WarehouseId");
-
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Rent.Models.Warehouse", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Equipment_name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Sizes")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Worker", b =>
@@ -462,9 +427,6 @@ namespace Rent.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<int?>("WarehouseId")
-                        .HasColumnType("int");
-
                     b.Property<TimeSpan>("WorkEnd")
                         .HasColumnType("time");
 
@@ -478,8 +440,6 @@ namespace Rent.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RentalInfoId");
-
-                    b.HasIndex("WarehouseId");
 
                     b.ToTable("Workers");
                 });
@@ -541,13 +501,7 @@ namespace Rent.Migrations
                         .WithMany("Equipment")
                         .HasForeignKey("RentalInfoId");
 
-                    b.HasOne("Rent.Models.Warehouse", "Warehouse")
-                        .WithMany("Equipment")
-                        .HasForeignKey("WarehouseId");
-
                     b.Navigation("RentalInfo");
-
-                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Order", b =>
@@ -590,13 +544,7 @@ namespace Rent.Migrations
                         .WithMany("Users")
                         .HasForeignKey("RentalInfoId");
 
-                    b.HasOne("Rent.Models.Warehouse", "Warehouse")
-                        .WithMany("Users")
-                        .HasForeignKey("WarehouseId");
-
                     b.Navigation("RentalInfo");
-
-                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Worker", b =>
@@ -607,13 +555,7 @@ namespace Rent.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Rent.Models.Warehouse", "Warehouse")
-                        .WithMany("Workers")
-                        .HasForeignKey("WarehouseId");
-
                     b.Navigation("RentalInfo");
-
-                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("Rent.Models.Equipment", b =>
@@ -640,15 +582,6 @@ namespace Rent.Migrations
             modelBuilder.Entity("Rent.Models.User", b =>
                 {
                     b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("Rent.Models.Warehouse", b =>
-                {
-                    b.Navigation("Equipment");
-
-                    b.Navigation("Users");
-
-                    b.Navigation("Workers");
                 });
 #pragma warning restore 612, 618
         }

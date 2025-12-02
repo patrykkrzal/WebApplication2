@@ -15,7 +15,6 @@ namespace Rent.Data
         public DbSet<Equipment> Equipment { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<RentalInfo> RentalInfo { get; set; }
-        public DbSet<Warehouse> Warehouse { get; set; }
         public DbSet<OrderedItem> OrderedItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
