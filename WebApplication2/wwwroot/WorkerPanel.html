@@ -65,7 +65,7 @@
  const total = Number(o.Price||0).toFixed(2);
  const items = (o.Items||[]).map(i=>`${i.Type} ${i.Size} × ${i.Quantity} — ${Number(i.PriceWhenOrdered||0).toFixed(2)} zł`).join('<br>');
  let actions = '';
- if(type==='pending') actions = `<button class='winter-button ok' data-accept='${o.Id}'>Akceptuj (wydaj)</button><button class='winter-button danger' data-reject='${o.Id}'>Odrzuć</button>`;
+ if(type==='pending') actions = `<button class='winter-button ok' data-accept='${o.Id}'>Akceptuj (wydaj)</button><button class='winter-button danger' data-delete='${o.Id}'>Usuń</button>`;
  else actions = `<button class='winter-button info' data-return='${o.Id}'>Zwrot</button>`;
  return `<div class='order-card'>
  <div><strong>Zamówienie #${o.Id}</strong> — ${user} — Suma: ${total} zł</div>
@@ -85,9 +85,9 @@
  I.innerHTML = render(issued,'issued');
  bind();
  }
- async function postOrAlert(url){
+ async function call(url, method){
  try{
- const res = await fetch(url,{method:'POST',credentials:'include'});
+ const res = await fetch(url,{method,credentials:'include'});
  const txt = await res.text();
  if(!res.ok) throw new Error(txt||('HTTP '+res.status));
  return txt;
@@ -97,9 +97,9 @@
  }
  }
  function bind(){
- P.querySelectorAll('[data-accept]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-accept'); try{ await postOrAlert(`/api/orders/${id}/accept`);} finally{ b.disabled=false; load(); } });
- P.querySelectorAll('[data-reject]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-reject'); try{ await postOrAlert(`/api/orders/${id}/reject`);} finally{ b.disabled=false; load(); } });
- I.querySelectorAll('[data-return]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-return'); try{ await postOrAlert(`/api/orders/${id}/returned`);} finally{ b.disabled=false; load(); } });
+ P.querySelectorAll('[data-accept]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-accept'); try{ await call(`/api/orders/${id}/accept`,'POST');} finally{ b.disabled=false; load(); } });
+ P.querySelectorAll('[data-delete]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-delete'); try{ await call(`/api/orders/${id}`,'DELETE');} finally{ b.disabled=false; load(); } });
+ I.querySelectorAll('[data-return]').forEach(b=> b.onclick = async ()=>{ b.disabled=true; const id=b.getAttribute('data-return'); try{ await call(`/api/orders/${id}/returned`,'POST');} finally{ b.disabled=false; load(); } });
  }
 
  load();

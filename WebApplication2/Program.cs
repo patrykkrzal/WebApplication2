@@ -11,6 +11,9 @@ using System.Text.Json.Serialization; // enum string converter
 using Microsoft.Data.SqlClient;
 using System.IO;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.CookiePolicy; // cookie policy
+using Microsoft.AspNetCore.Http; // SameSiteMode
+using Rent.DTO; // UpdateUserDto
 
 public class Program
 {
@@ -75,6 +78,14 @@ public class Program
             .AddBearerToken(IdentityConstants.BearerScheme)
             .AddCookie(IdentityConstants.ApplicationScheme);
 
+        // Wymuœ bezpieczne ciasteczka dla HTTPS
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // tylko po HTTPS
+            options.Cookie.SameSite = SameSiteMode.Lax; // wspó³dzia³a z fetch + credentials
+        });
+
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy("IsWorker", policy => policy.RequireRole("Worker"));
@@ -118,9 +129,16 @@ public class Program
                 string? sqlPath = sqlPathCandidates.FirstOrDefault(File.Exists);
                 if (sqlPath != null)
                 {
-                    var script = await File.ReadAllTextAsync(sqlPath);
-                    await ExecuteSqlScriptBatchedAsync(cs, script);
-                    Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                    if (string.IsNullOrWhiteSpace(cs))
+                    {
+                        Console.WriteLine("Connection string is null/empty; skipping DatabaseObjects.sql execution.");
+                    }
+                    else
+                    {
+                        var script = await File.ReadAllTextAsync(sqlPath);
+                        await ExecuteSqlScriptBatchedAsync(cs, script);
+                        Console.WriteLine($"Executed DatabaseObjects.sql from '{sqlPath}'.");
+                    }
                 }
                 else
                 {
@@ -201,12 +219,18 @@ public class Program
         app.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "Rent API V1");
+            c.RoutePrefix = "swagger"; // Swagger pod /swagger
         });
 
         // -------------------------------
         //  MIDDLEWARE
         // -------------------------------
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHsts(); // w produkcji HSTS
+        }
         app.UseHttpsRedirection();
+        app.UseDefaultFiles(); // Index.html jako strona g³ówna
         app.UseStaticFiles();
 
         app.UseAuthentication();
@@ -248,6 +272,31 @@ public class Program
         {
             return await context.Users.ToListAsync();
         }).RequireAuthorization("IsAdmin"); // ograniczenie publicznych endpointów
+
+        // PATCH: update current user's UserName
+        app.MapMethods("/api/users/me/username", new[] { "PATCH" }, async (
+            ClaimsPrincipal claims,
+            UserManager<User> userManager,
+            UpdateUserDto req) =>
+        {
+            var userId = claims.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+            if (req is null || string.IsNullOrWhiteSpace(req.UserName))
+                return Results.BadRequest(new { Message = "UserName is required" });
+
+            var exists = await userManager.FindByNameAsync(req.UserName);
+            if (exists != null && exists.Id != userId)
+                return Results.Conflict(new { Message = "UserName already taken" });
+
+            var user = await userManager.FindByIdAsync(userId);
+            if (user is null) return Results.NotFound();
+            user.UserName = req.UserName;
+            var result = await userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return Results.BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
+
+            return Results.Ok(new { user.Id, user.UserName, user.Email });
+        }).RequireAuthorization();
 
         // -------------------------------
         //  START APLIKACJI

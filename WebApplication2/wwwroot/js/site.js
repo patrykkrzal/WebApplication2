@@ -1,7 +1,12 @@
 (function () {
 
     function go(url) {
-        if (url) window.location.href = url;
+        if (!url) return;
+        // if relative without protocol and without leading slash -> make it absolute from site root
+        if (!/^(https?:)?\/\//i.test(url) && url.charAt(0) !== '/') {
+            url = '/' + url.replace(/^\.?\//, '');
+        }
+        window.location.href = url;
     }
 
     function bindNav() {
@@ -50,7 +55,7 @@
         authState.isAuthenticated = false;
         applyRoleVisibility();
 
-        window.location.href = 'Index.html';
+        window.location.href = '/Index.html';
     }
 
     function setUserPanelDisabled(disabled) {

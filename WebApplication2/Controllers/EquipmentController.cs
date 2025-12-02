@@ -27,6 +27,13 @@ namespace Rent.Controllers
             return Ok(allEquipment);
         }
 
+        [HttpGet("{id:int}")]
+        public IActionResult GetById(int id)
+        {
+            var eq = dbContext.Equipment.Find(id);
+            return eq is null ? NotFound() : Ok(eq);
+        }
+
         private decimal ResolvePrice(EquipmentType type, Size size)
         {
             // Stałe ceny według typu + ewentualny rozmiar
@@ -65,7 +72,7 @@ namespace Rent.Controllers
             return Ok(grouped);
         }
 
-        [Authorize(Roles="Admin,Worker")]
+        [Authorize(Roles = "Admin,Worker")]
         [HttpPost("add")] // unique route to avoid Swagger conflicts
         public IActionResult AddEquipment([FromBody] CreateEquipmentDTO dto)
         {
@@ -82,6 +89,49 @@ namespace Rent.Controllers
 
             // Return refreshed list or simple acknowledgment
             return Ok(new { Message = "Equipment added", dto.Type, dto.Size, Price = price });
+        }
+
+        // DELETE one available (not reserved, in warehouse) item for given type+size
+        [Authorize(Roles = "Admin,Worker")]
+        [HttpDelete("delete")]
+        public IActionResult DeleteOne([FromBody] CreateEquipmentDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var entity = dbContext.Equipment
+                .Where(e => e.Type == dto.Type && e.Size == dto.Size && e.Is_In_Werehouse && !e.Is_Reserved)
+                .FirstOrDefault();
+            if (entity == null)
+            {
+                return NotFound(new { Message = "Equipment not found or unavailable", dto.Type, dto.Size });
+            }
+            dbContext.Equipment.Remove(entity);
+            dbContext.SaveChanges();
+            var remaining = dbContext.Equipment.Count(e => e.Type == dto.Type && e.Size == dto.Size && e.Is_In_Werehouse && !e.Is_Reserved);
+            return Ok(new { Message = "Deleted one equipment item", dto.Type, dto.Size, Remaining = remaining });
+        }
+
+        [Authorize(Roles = "Admin,Worker")]
+        [HttpDelete("{id:int}")] // delete by id
+        public IActionResult DeleteById(int id)
+        {
+            var entity = dbContext.Equipment.Find(id);
+            if (entity is null) return NotFound();
+            dbContext.Equipment.Remove(entity);
+            dbContext.SaveChanges();
+            return NoContent();
+        }
+
+        [Authorize(Roles = "Admin,Worker")]
+        [HttpPut("{id:int}")] // update price/flags
+        public IActionResult Update(int id, [FromBody] UpdateEquipmentDTO dto)
+        {
+            var entity = dbContext.Equipment.Find(id);
+            if (entity is null) return NotFound();
+            if (dto.Price.HasValue) entity.Price = dto.Price.Value;
+            if (dto.Is_In_Werehouse.HasValue) entity.Is_In_Werehouse = dto.Is_In_Werehouse.Value;
+            if (dto.Is_Reserved.HasValue) entity.Is_Reserved = dto.Is_Reserved.Value;
+            dbContext.SaveChanges();
+            return Ok(entity);
         }
     }
 }

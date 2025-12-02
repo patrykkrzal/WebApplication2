@@ -123,9 +123,10 @@ namespace Rent.Controllers
  return Ok(new { Message = "Order accepted", Updated = affected });
  }
 
+ // DELETE: cancel/reject an order and release reserved equipment
  [Authorize(Roles="Admin,Worker")]
- [HttpPost("{orderId}/reject")]
- public async Task<IActionResult> Reject(int orderId)
+ [HttpDelete("{orderId}")]
+ public async Task<IActionResult> Delete(int orderId)
  {
  var order = await _db.Orders.Include(o => o.OrderedItems).ThenInclude(oi => oi.Equipment).FirstOrDefaultAsync(o => o.Id == orderId);
  if (order == null) return NotFound();
@@ -136,11 +137,10 @@ namespace Rent.Controllers
  oi.Equipment.Is_Reserved = false;
  }
  }
- // Usuñ pozycje i zamówienie (stan sprzed dodania statusu 'Usuniêto')
  _db.OrderedItems.RemoveRange(order.OrderedItems);
  _db.Orders.Remove(order);
  await _db.SaveChangesAsync();
- return Ok(new { Message = "Order rejected and removed" });
+ return Ok(new { Message = "Order deleted" });
  }
 
  [Authorize(Roles="Admin,Worker")]

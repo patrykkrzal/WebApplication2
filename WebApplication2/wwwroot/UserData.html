@@ -44,6 +44,16 @@
  <p>Ładowanie danych...</p>
  </div>
 
+ <div class="form-box" id="usernameBox" data-show-when-auth="true" style="margin-top:1rem; display:none;">
+ <label>Nowa nazwa użytkownika
+ <input type="text" id="newUserName" minlength="3" maxlength="50" />
+ </label>
+ <div class="block-actions">
+ <button class="winter-button" id="btnChangeUserName">Zmień nazwę</button>
+ <span id="userMsg" class="msg"></span>
+ </div>
+ </div>
+
  <div class="alt-link" data-hide-when-auth="true">
  Aby zobaczyć dane, zaloguj się: <a href="Login.html">Logowanie</a>
  </div>
@@ -71,9 +81,41 @@
 <div class="contact-item"><strong>Telefon</strong><div class="contact-value">${phone}</div></div>
 <div class="contact-item"><strong>Imię</strong><div class="contact-value">${firstName}</div></div>
 <div class="contact-item"><strong>Nazwisko</strong><div class="contact-value">${lastName}</div></div>`;
+
+ document.getElementById('usernameBox').style.display = '';
+ document.getElementById('newUserName').value = userName;
  } catch { }
  }
- document.addEventListener('DOMContentLoaded', loadUser);
+
+ async function changeUserName() {
+ const msg = document.getElementById('userMsg');
+ msg.className = 'msg';
+ msg.textContent = 'Zapisywanie...';
+ const newName = document.getElementById('newUserName').value.trim();
+ if (!newName) { msg.className='msg error'; msg.textContent='Podaj nazwę użytkownika'; return; }
+ try {
+ const res = await fetch('/api/users/me/username', {
+ method: 'PATCH',
+ headers: { 'Content-Type': 'application/json' },
+ credentials: 'include',
+ body: JSON.stringify({ UserName: newName })
+ });
+ const text = await res.text();
+ let data = text; try { data = JSON.parse(text); } catch {}
+ if (!res.ok) throw new Error(typeof data==='string'? data : (data.Message || 'Błąd'));
+ msg.className = 'msg success';
+ msg.textContent = 'Zmieniono nazwę użytkownika';
+ await loadUser();
+ } catch (e) {
+ msg.className = 'msg error';
+ msg.textContent = 'Błąd: ' + e.message;
+ }
+ }
+
+ document.addEventListener('DOMContentLoaded', () => {
+ loadUser();
+ document.getElementById('btnChangeUserName').addEventListener('click', changeUserName);
+ });
  </script>
 </body>
 
